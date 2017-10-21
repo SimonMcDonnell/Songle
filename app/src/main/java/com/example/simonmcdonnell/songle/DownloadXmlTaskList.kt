@@ -8,15 +8,13 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class DownloadXmlTask(private val caller: MainActivity): AsyncTask<String, Void, String>() {
+class DownloadXmlTaskList(var songList: ArrayList<MyParser.Song>, var adapter: SongListAdapter):
+        AsyncTask<String, Void, String>() {
     private val TAG = "LOG_TAG"
+    private lateinit var songs: ArrayList<MyParser.Song>
+    private val DOWNLOAD_SUCCESSFUL = "1"
 
-    // Callback to UI thread
-    interface DownloadCompleteListener {
-        fun downloadComplete(result: String)
-    }
-
-    override fun doInBackground(vararg urls: String): String {
+    override fun doInBackground(vararg urls: String) : String {
         Log.v(TAG, "doInBackground")
         return try {
             loadXmlFromNetwork(urls[0])
@@ -28,13 +26,12 @@ class DownloadXmlTask(private val caller: MainActivity): AsyncTask<String, Void,
     }
 
     private fun loadXmlFromNetwork(urlString: String): String {
-        val result = StringBuilder()
         val stream = downloadUrl(urlString)
         // parse the input stream
         val mParser = MyParser()
-        val entries = mParser.parse(stream)
-        Log.v("LOGTAG", entries.size.toString())
-        return result.toString()
+        val songs = mParser.parse(stream)
+        this.songs = songs
+        return DOWNLOAD_SUCCESSFUL
     }
 
     @Throws(IOException::class)
@@ -52,7 +49,10 @@ class DownloadXmlTask(private val caller: MainActivity): AsyncTask<String, Void,
 
     override fun onPostExecute(result: String) {
         super.onPostExecute(result)
-        Log.v(TAG, result)
-        caller.downloadComplete(result)
+        if (result == DOWNLOAD_SUCCESSFUL) {
+            songList.clear()
+            songList.addAll(songs)
+            adapter.notifyDataSetChanged()
+        }
     }
 }

@@ -2,4 +2,6 @@
     <string name="app_name">Songle</string>
     <string name="title_activity_maps">Map</string>
     <string name="main_activity_play_button">Play!</string>
+    <string name="song_item_title">Title</string>
+    <string name="song_item_artist">Artist</string>
 </resources>

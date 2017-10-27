@@ -12,7 +12,7 @@ import android.util.Log
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_song_list.*
 
-class SongListActivity : AppCompatActivity(), SongListAdapter.SongClickedListener {
+class SongListActivity : AppCompatActivity() {
     private val TAG = "LOG_TAG"
     private lateinit var songList: ArrayList<MyParser.Song>
     private lateinit var adapter: SongListAdapter
@@ -25,10 +25,10 @@ class SongListActivity : AppCompatActivity(), SongListAdapter.SongClickedListene
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         this.registerReceiver(receiver, filter)
         // Set up recyclerview
-        songList = ArrayList()
-        adapter = SongListAdapter(this, songList)
-        recyclerview.adapter = adapter
-        recyclerview.layoutManager = LinearLayoutManager(this)
+//        songList = ArrayList()
+//        adapter = SongListAdapter(this, songList)
+//        recyclerview.adapter = adapter
+//        recyclerview.layoutManager = LinearLayoutManager(this)
     }
 
     private inner class NetworkReceiver : BroadcastReceiver() {
@@ -47,10 +47,10 @@ class SongListActivity : AppCompatActivity(), SongListAdapter.SongClickedListene
         }
     }
 
-    override fun onClick(songNumber: String) {
-        val toast = Toast.makeText(this, songNumber, Toast.LENGTH_SHORT)
-        toast.show()
-        val mapsIntent = Intent(this, MapsActivity::class.java)
-        startActivity(mapsIntent)
-    }
+//    override fun onClick(songNumber: String) {
+//        val toast = Toast.makeText(this, songNumber, Toast.LENGTH_SHORT)
+//        toast.show()
+//        val mapsIntent = Intent(this, MapsActivity::class.java)
+//        startActivity(mapsIntent)
+//    }
 }

@@ -11,7 +11,7 @@ import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.view.*
 import kotlinx.android.synthetic.main.song_item.view.*
 
-class SongListAdapter(val caller: SongClickedListener, var songList: ArrayList<MyParser.Song>) :
+class SongListAdapter(val caller: Context, var songList: ArrayList<String>) :
         RecyclerView.Adapter<SongListAdapter.MyViewHolder>() {
     private val TAG = "LOG_TAG"
 
@@ -27,34 +27,15 @@ class SongListAdapter(val caller: SongClickedListener, var songList: ArrayList<M
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         // Once we bind to the song_item view, we assign its values
-        val item = songList[position]
-        holder.number = item.number
-        holder.title.text = item.title
-        holder.artist.text = item.artist
-        holder.link = item.link
+        holder.title.text = songList[position]
     }
 
     // Inner class to deal with a user clicking on an item in the song list
-    class MyViewHolder(view: View, caller: SongClickedListener) : RecyclerView.ViewHolder(view), View.OnClickListener {
+    class MyViewHolder(val view: View, val caller: Context) : RecyclerView.ViewHolder(view) {
         private val TAG = "LOG_TAG"
-        private val caller = caller
-        var v: View = view
         var number = ""
-        var title: TextView = v.song_title
-        var artist: TextView = v.song_artist
+        var title: TextView = view.song_title
+//        var artist: TextView = v.song_artist
         var link = ""
-
-        init {
-            v.setOnClickListener(this)
-        }
-
-        override fun onClick(v: View) {
-            Log.v(TAG, title.text.toString())
-            caller.onClick(number)
-        }
-    }
-
-    interface SongClickedListener {
-        fun onClick(songNumber: String)
     }
 }

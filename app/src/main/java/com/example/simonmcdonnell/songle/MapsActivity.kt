@@ -1,12 +1,15 @@
 package com.example.simonmcdonnell.songle
 
+import android.app.Dialog
 import android.content.pm.PackageManager
 import android.location.Location
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.view.WindowManager
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
@@ -21,6 +24,8 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.data.kml.KmlLayer
 import java.io.ByteArrayInputStream
 import kotlinx.android.synthetic.main.activity_maps.*
+import kotlinx.android.synthetic.main.guess_song.*
+import kotlinx.android.synthetic.main.list_layout.*
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener, DownloadKMLTask.DownloadKMLListener {
@@ -30,6 +35,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var mLastLocation : Location
     private lateinit var url: String
+    private lateinit var collectedLyrics: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,10 +52,65 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         // Create instance of GoogleApiClient
         mGoogleApiClient = GoogleApiClient.Builder(this).addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this).addApi(LocationServices.API).build()
-        // Set up Floating action button
-//        fab.setOnClickListener { _ ->
-//            Log.v(TAG, "Clicked the fab boiiii")
-//        }
+        // Set up Floating action button menu
+        val fab_main = fab_main
+        val fab_item1 = fab_menu_item1
+        val fab_item2 = fab_menu_item2
+        collectedLyrics = ArrayList()
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("bye")
+        fab_item1.setOnClickListener { _ ->
+            fab_main.close(true)
+            viewCollectedLyrics()
+        }
+        fab_item2.setOnClickListener { _ ->
+            fab_main.close(true)
+            guessSong()
+        }
+    }
+
+    fun viewCollectedLyrics() {
+        // Display custom view of lyrics collected
+        val dialog = Dialog(this)
+        val layoutParams = WindowManager.LayoutParams()
+        layoutParams.copyFrom(dialog.window.attributes)
+        layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
+        dialog.setContentView(R.layout.list_layout)
+        val lyricList = dialog.recyclerview
+        lyricList.layoutManager = LinearLayoutManager(this)
+        lyricList.adapter = SongListAdapter(this, collectedLyrics)
+        dialog.window.attributes.windowAnimations = R.style.dialog_animation
+        dialog.show()
+        dialog.window.attributes = layoutParams
+    }
+
+    fun guessSong() {
+        val dialog = Dialog(this)
+//        val layoutParams = WindowManager.LayoutParams()
+//        layoutParams.copyFrom(dialog.window.attributes)
+//        layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
+        dialog.setContentView(R.layout.guess_song)
+        val guess_button = dialog.guess_song_button
+        dialog.show()
+//        dialog.window.attributes = layoutParams
     }
 
     override fun onMapReady(googleMap: GoogleMap) {

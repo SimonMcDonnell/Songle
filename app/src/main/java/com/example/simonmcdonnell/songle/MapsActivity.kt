@@ -1,5 +1,6 @@
 package com.example.simonmcdonnell.songle
 
+import android.app.AlertDialog
 import android.app.Dialog
 import android.content.pm.PackageManager
 import android.location.Location
@@ -22,29 +23,42 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.data.kml.KmlLayer
+import com.google.maps.android.data.kml.KmlPoint
 import java.io.ByteArrayInputStream
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.guess_song.*
 import kotlinx.android.synthetic.main.list_layout.*
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, LocationListener, DownloadKMLTask.DownloadKMLListener {
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private val TAG = "LOG_TAG"
     private lateinit var mMap: GoogleMap
     private lateinit var mGoogleApiClient : GoogleApiClient
     val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var mLastLocation : Location
     private lateinit var url: String
+    private lateinit var lyric_list: List<List<String>>
     private lateinit var collectedLyrics: ArrayList<String>
+    private lateinit var kmlString: String
+    private lateinit var layer: KmlLayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         // Get extras from intent and build url
         val extras = intent.extras
-        val map_id = extras["MAP_ID"]
-        url = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/$map_id/map1.kml"
-        Log.v(TAG, url)
+        val map_id = extras["ID"]
+        val song_name = extras["NAME"]
+        val song_artist = extras["ARTIST"]
+        val song_link = extras["LINK"]
+        val song_lyrics = extras["LYRICS"] as String
+        val lyric_lines = song_lyrics.split("\n")
+        lyric_list = lyric_lines.map { it.trim().split(" ") }
+        kmlString = extras["KML"] as String
+//        url = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/$map_id/map1.kml"
+//        Log.v(TAG, url)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         // Get notified when map is ready to use
@@ -87,6 +101,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
     }
 
+    fun collectLyric(lyricID: String) {
+        Log.v(TAG, "Collected $lyricID")
+        val alertDialog = AlertDialog.Builder(this).create()
+        alertDialog.setTitle("Alert")
+        alertDialog.setMessage("You've collected a lyric")
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { dialog, _ -> dialog.dismiss()})
+        alertDialog.show()
+    }
+
     fun viewCollectedLyrics() {
         // Display custom view of lyrics collected
         val dialog = Dialog(this)
@@ -97,20 +120,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val lyricList = dialog.recyclerview
         lyricList.layoutManager = LinearLayoutManager(this)
         lyricList.adapter = SongListAdapter(this, collectedLyrics)
-        dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
         dialog.window.attributes = layoutParams
     }
 
     fun guessSong() {
         val dialog = Dialog(this)
-//        val layoutParams = WindowManager.LayoutParams()
-//        layoutParams.copyFrom(dialog.window.attributes)
-//        layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
+        val layoutParams = WindowManager.LayoutParams()
+        layoutParams.copyFrom(dialog.window.attributes)
+        layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
         dialog.setContentView(R.layout.guess_song)
         val guess_button = dialog.guess_song_button
         dialog.show()
-//        dialog.window.attributes = layoutParams
+        dialog.window.attributes = layoutParams
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -127,7 +149,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
         // Add "My Location" button to screen
         mMap.uiSettings.isMyLocationButtonEnabled = true
-        DownloadKMLTask(this).execute(url)
+//        DownloadKMLTask(this).execute(url)
+        layer = KmlLayer(mMap, kmlString.byteInputStream(StandardCharsets.UTF_8), this)
+        layer.addLayerToMap()
     }
 
     override fun onConnected(connectionHint: Bundle?) {
@@ -162,6 +186,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             println("[onLocationUnchanged] Location unknown")
         } else {
             println("[onLocationChanged] Lat/Long now (${current.latitude}, ${current.longitude})")
+            for (container in layer.containers) {
+                for (placemark in container.placemarks) {
+                    val point = placemark.geometry as KmlPoint
+                    val point_lat = point.geometryObject.latitude
+                    val point_long = point.geometryObject.longitude
+                    val lat_dist = Math.abs(current.latitude - point_lat)
+                    val long_dist = Math.abs(current.longitude - point_long)
+                    val dist = Math.sqrt(Math.pow(lat_dist, 2.0) + Math.pow(long_dist, 2.0))
+                    if (dist <= 0.00015) {
+                        collectLyric("Got one!")
+                        break
+                    }
+                }
+            }
         }
         // Update location
         createLocationRequest()
@@ -182,15 +220,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
     }
 
-    override fun downloadComplete(byteArr: ByteArray) {
-        // Add the word markers to the map
-        val layer = KmlLayer(mMap, ByteArrayInputStream(byteArr), this)
-        layer.addLayerToMap()
-        // Add listener for when
-        layer.setOnFeatureClickListener { View ->
-            Log.v(TAG, View.getProperty("name"))
-        }
-    }
+//    override fun downloadComplete(byteArr: ByteArray) {
+//        // Add the word markers to the map
+//        layer = KmlLayer(mMap, ByteArrayInputStream(byteArr), this)
+//        layer.addLayerToMap()
+//        // Add listener for when
+//        layer.setOnFeatureClickListener { View ->
+//            Log.v(TAG, View.getProperty("name"))
+//        }
+//    }
 
     override fun onStart() {
         super.onStart()

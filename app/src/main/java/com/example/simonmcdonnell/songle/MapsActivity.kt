@@ -152,7 +152,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
         // Add "My Location" button to screen
         mMap.uiSettings.isMyLocationButtonEnabled = true
-//        DownloadKMLTask(this).execute(url)
+        // Add Kml layer to the map
         layer = KmlLayer(mMap, kmlString.byteInputStream(StandardCharsets.UTF_8), this)
         layer.addLayerToMap()
     }

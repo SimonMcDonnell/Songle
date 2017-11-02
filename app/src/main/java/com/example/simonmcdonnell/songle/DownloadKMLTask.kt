@@ -14,8 +14,6 @@ import java.nio.charset.StandardCharsets
 class DownloadKMLTask(val caller: DownloadKMLListener, val lyrics: String, val song: MyParser.Song):
         AsyncTask<String, Void, String>() {
     private val TAG = "LOG_TAG"
-    private val DOWNLOAD_SUCCESSFUL = "1"
-    private lateinit var byteArr: ByteArray
 
     interface DownloadKMLListener {
         fun downloadComplete(kmlString: String, lyrics: String, song: MyParser.Song)
@@ -36,17 +34,6 @@ class DownloadKMLTask(val caller: DownloadKMLListener, val lyrics: String, val s
         val stream = downloadUrl(urlString)
         val kmlString = stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
         return kmlString
-//        val out = ByteArrayOutputStream(8192)
-//        val buffer = ByteArray(8192)
-//        while (true) {
-//            val length = stream.read(buffer)
-//            if (length <= 0)
-//                break
-//            out.write(buffer, 0, length)
-//        }
-//        out.flush()
-//        byteArr = out.toByteArray()
-//        return DOWNLOAD_SUCCESSFUL
     }
 
     @Throws(IOException::class)
@@ -64,9 +51,6 @@ class DownloadKMLTask(val caller: DownloadKMLListener, val lyrics: String, val s
 
     override fun onPostExecute(result: String) {
         super.onPostExecute(result)
-//        if (result == DOWNLOAD_SUCCESSFUL) {
-//            caller.downloadComplete(byteArr)
-//        }
         caller.downloadComplete(result, lyrics, song)
     }
 }

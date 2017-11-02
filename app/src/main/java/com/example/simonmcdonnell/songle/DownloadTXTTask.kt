@@ -30,7 +30,6 @@ class DownloadTXTTask(val caller: DownloadTXTListener, val song: MyParser.Song) 
         val stream = downloadUrl(urlString)
         val lyrics = stream.bufferedReader().use { it.readText() }
         return lyrics
-
     }
 
     @Throws(IOException::class)

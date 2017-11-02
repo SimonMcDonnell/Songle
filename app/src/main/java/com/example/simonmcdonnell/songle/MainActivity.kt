@@ -9,38 +9,45 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.design.widget.Snackbar
 import android.util.Log
-import android.widget.Toast
-import com.google.maps.android.data.kml.KmlLayer
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.ByteArrayInputStream
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.util.*
 
-class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, DownloadKMLTask.DownloadKMLListener,
-        DownloadTXTTask.DownloadTXTListener {
+class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, DownloadTXTTask.DownloadTXTListener {
     private val TAG = "LOG_TAG"
-    private val songsUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml"
     private val contentUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
     private lateinit var settings: SharedPreferences
+    private lateinit var songList: List<MyParser.Song>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         // Get Shared Preferences
         settings = PreferenceManager.getDefaultSharedPreferences(this)
+        // Get XML String and parse to get list of songs
+        val extras = intent.extras
+        val xmlString = extras["XML"] as String
+        val xmlInputStream = xmlString.byteInputStream(StandardCharsets.UTF_8)
+        val mParser = MyParser()
+        songList = mParser.parse(xmlInputStream)
         // Set on click listener for play button
         play_button.setOnClickListener { _ ->
             val haveConnection = checkConnection()
             if (haveConnection) {
-                DownloadXMLTask(this).execute(songsUrl)
+                playRandomSong()
             } else {
-                displayMessage("No connection")
+                displayMessage("No Connection")
             }
         }
         settings_button.setOnClickListener { _ ->
             val settingsIntent = Intent(this, SettingsActivity::class.java)
             startActivity(settingsIntent)
         }
+    }
+
+    fun displayMessage(message: String) {
+        val snackBar = Snackbar.make(constraint_layout, message, Snackbar.LENGTH_SHORT)
+        snackBar.show()
     }
 
     fun checkConnection(): Boolean {
@@ -51,12 +58,7 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
                 || networkInfo?.type == ConnectivityManager.TYPE_MOBILE
     }
 
-    fun displayMessage(message: String) {
-        val snackbar = Snackbar.make(constraint_layout, message, Snackbar.LENGTH_SHORT)
-        snackbar.show()
-    }
-
-    override fun downloadComplete(songList: List<MyParser.Song>) {
+    fun playRandomSong() {
         // Pick a random song from the list
         val rand = Random()
         val index = rand.nextInt(songList.size)
@@ -65,9 +67,10 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
         DownloadTXTTask(this, song).execute(contentUrl + "${song.number}/lyrics.txt")
     }
 
+    // Download complete for retrieving Lyrics
     override fun downloadComplete(lyrics: String, song: MyParser.Song) {
         displayMessage(song.title)
-        Log.v(TAG, "Here is the lyrics $lyrics")
+        // Get the difficulty level and select appropriate kml to download
         val difficulty = settings.getString("difficulty", "2").toInt()
         DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map$difficulty.kml")
     }

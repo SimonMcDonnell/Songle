@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 import android.util.Log
 import android.widget.Toast
 import com.google.maps.android.data.kml.KmlLayer
@@ -17,8 +18,7 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
         DownloadTXTTask.DownloadTXTListener {
     private val TAG = "LOG_TAG"
     private val songsUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml"
-    private val lyricsUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
-    private val mapsUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
+    private val contentUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,21 +29,26 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
             if (haveConnection) {
                 DownloadXMLTask(this).execute(songsUrl)
             } else {
-                displayToast("No connection")
+                displayMessage("No connection")
             }
+        }
+        settings_button.setOnClickListener { _ ->
+            val settingsIntent = Intent(this, SettingsActivity::class.java)
+            startActivity(settingsIntent)
         }
     }
 
     fun checkConnection(): Boolean {
+        // Return a boolean value indicating whether we have internet connection
         val connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkInfo = connMgr.activeNetworkInfo
         return networkInfo?.type == ConnectivityManager.TYPE_WIFI
                 || networkInfo?.type == ConnectivityManager.TYPE_MOBILE
     }
 
-    fun displayToast(message: String) {
-        val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
-        toast.show()
+    fun displayMessage(message: String) {
+        val snackbar = Snackbar.make(constraint_layout, message, Snackbar.LENGTH_SHORT)
+        snackbar.show()
     }
 
     override fun downloadComplete(songList: List<MyParser.Song>) {
@@ -52,13 +57,13 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
         val index = rand.nextInt(songList.size)
         val song = songList[index]
         // Display song and send it to MapsActivity
-        DownloadTXTTask(this, song).execute(lyricsUrl + "${song.number}/lyrics.txt")
+        DownloadTXTTask(this, song).execute(contentUrl + "${song.number}/lyrics.txt")
     }
 
     override fun downloadComplete(lyrics: String, song: MyParser.Song) {
-        displayToast(song.title)
+        displayMessage(song.title)
         Log.v(TAG, "Here is the lyrics $lyrics")
-        DownloadKMLTask(this, lyrics, song).execute(mapsUrl + "${song.number}/map1.kml")
+        DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map1.kml")
     }
 
     override fun downloadComplete(kmlString: String, lyrics: String, song: MyParser.Song) {

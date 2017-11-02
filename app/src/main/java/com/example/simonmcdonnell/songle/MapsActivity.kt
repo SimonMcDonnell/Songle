@@ -9,8 +9,13 @@ import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.StaggeredGridLayoutManager
 import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.PopupWindow
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
@@ -38,8 +43,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     private lateinit var mGoogleApiClient : GoogleApiClient
     val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var mLastLocation : Location
-    private lateinit var url: String
-    private lateinit var lyric_list: List<List<String>>
+    private lateinit var lyricList: List<List<String>>
     private lateinit var collectedLyrics: ArrayList<String>
     private lateinit var kmlString: String
     private lateinit var layer: KmlLayer
@@ -55,10 +59,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val song_link = extras["LINK"]
         val song_lyrics = extras["LYRICS"] as String
         val lyric_lines = song_lyrics.split("\n")
-        lyric_list = lyric_lines.map { it.trim().split(" ") }
+        lyricList = lyric_lines.map { it.trim().split(" ") }
         kmlString = extras["KML"] as String
-//        url = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/$map_id/map1.kml"
-//        Log.v(TAG, url)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         // Get notified when map is ready to use
@@ -75,18 +77,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         collectedLyrics.add("bye")
         collectedLyrics.add("Hello")
         collectedLyrics.add("bye")
+        collectedLyrics.add("Hello different ")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("this is a bunch Hello")
+        collectedLyrics.add("bye")
+        collectedLyrics.add("Hello")
+        collectedLyrics.add("This is a really long lyric that I've collected bye")
         collectedLyrics.add("Hello")
         collectedLyrics.add("bye")
         collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
+        collectedLyrics.add("byehi hihihihihi")
         collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
+        collectedLyrics.add("byeThis is a realy long line from a song test")
         collectedLyrics.add("Hello")
         collectedLyrics.add("bye")
         collectedLyrics.add("Hello")
@@ -118,8 +120,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
         dialog.setContentView(R.layout.list_layout)
         val lyricList = dialog.recyclerview
-        lyricList.layoutManager = LinearLayoutManager(this)
+        lyricList.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         lyricList.adapter = SongListAdapter(this, collectedLyrics)
+        dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
         dialog.window.attributes = layoutParams
     }
@@ -219,16 +222,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                     mGoogleApiClient, myLocationRequest, this)
         }
     }
-
-//    override fun downloadComplete(byteArr: ByteArray) {
-//        // Add the word markers to the map
-//        layer = KmlLayer(mMap, ByteArrayInputStream(byteArr), this)
-//        layer.addLayerToMap()
-//        // Add listener for when
-//        layer.setOnFeatureClickListener { View ->
-//            Log.v(TAG, View.getProperty("name"))
-//        }
-//    }
 
     override fun onStart() {
         super.onStart()

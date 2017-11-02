@@ -2,9 +2,11 @@ package com.example.simonmcdonnell.songle
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.ConnectivityManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.support.design.widget.Snackbar
 import android.util.Log
 import android.widget.Toast
@@ -19,10 +21,13 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
     private val TAG = "LOG_TAG"
     private val songsUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml"
     private val contentUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
+    private lateinit var settings: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        // Get Shared Preferences
+        settings = PreferenceManager.getDefaultSharedPreferences(this)
         // Set on click listener for play button
         play_button.setOnClickListener { _ ->
             val haveConnection = checkConnection()
@@ -63,7 +68,8 @@ class MainActivity : AppCompatActivity(), DownloadXMLTask.DownloadXMLListener, D
     override fun downloadComplete(lyrics: String, song: MyParser.Song) {
         displayMessage(song.title)
         Log.v(TAG, "Here is the lyrics $lyrics")
-        DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map1.kml")
+        val difficulty = settings.getString("difficulty", "2").toInt()
+        DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map$difficulty.kml")
     }
 
     override fun downloadComplete(kmlString: String, lyrics: String, song: MyParser.Song) {

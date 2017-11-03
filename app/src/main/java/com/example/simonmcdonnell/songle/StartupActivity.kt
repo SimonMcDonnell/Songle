@@ -56,7 +56,6 @@ class StartupActivity : AppCompatActivity() {
         override fun doInBackground(vararg urls: String): String {
             Log.v(TAG, "doInBackground")
             return try {
-                Thread.sleep(1000)
                 loadXmlFromNetwork(urls[0])
             } catch (e: IOException) {
                 "Unable to load content, check internet connection"

@@ -5,19 +5,20 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Location
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.CountDownTimer
+import android.preference.PreferenceManager
+import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
-import android.support.v7.widget.LinearLayoutManager
+import android.support.v4.view.MenuItemCompat
 import android.support.v7.widget.StaggeredGridLayoutManager
 import android.util.Log
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.view.WindowManager
-import android.widget.PopupWindow
+import android.view.*
+import android.widget.TextView
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationListener
@@ -31,19 +32,18 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.data.kml.KmlLayer
 import com.google.maps.android.data.kml.KmlPoint
-import java.io.ByteArrayInputStream
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.guess_song.*
 import kotlinx.android.synthetic.main.list_layout.*
-import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private val TAG = "LOG_TAG"
+    private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var mMap: GoogleMap
     private lateinit var mGoogleApiClient : GoogleApiClient
-    val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var mLastLocation : Location
     private lateinit var lyricList: List<List<String>>
     private lateinit var collectedLyrics: ArrayList<String>
@@ -75,7 +75,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         collectedLyrics.add("bye")
         collectedLyrics.add("Hello")
         collectedLyrics.add("bye")
-        collectedLyrics.add("Hello different ")
+        collectedLyrics.add("Hello differenthhhhhhhhhhhhthishihgioewhgoiwehgoiwgowovweobvwouevouwbevouwabvouwbvouwbv ")
         collectedLyrics.add("bye")
         collectedLyrics.add("this is a bunch Hello")
         collectedLyrics.add("bye")
@@ -99,6 +99,57 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             fab_main.close(true)
             guessSong(extras)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        // Get shared preferences
+        val settings = PreferenceManager.getDefaultSharedPreferences(this)
+        val isTimed = settings.getBoolean("timer", false)
+        if (isTimed) {
+            menuInflater.inflate(R.menu.timer, menu)
+            val timer = menu?.findItem(R.id.countdown_timer)
+            val timerText = MenuItemCompat.getActionView(timer) as TextView
+            timerText.setPadding(20, 0, 50, 0)
+            timerText.textSize = 24f
+            when (settings.getString("difficulty", "3")) {
+                "5" -> startTimer(timerText, 1800000, 1000)
+                "4" -> startTimer(timerText, 1800000, 1000)
+                "3" -> startTimer(timerText, 1200000, 1000)
+                "2" -> startTimer(timerText, 900000, 1000)
+                "1" -> startTimer(timerText, 600000, 1000)
+            }
+        }
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    fun startTimer(timerText: TextView, duration: Long, interval: Long) {
+        val countDownTimer = object: CountDownTimer(duration, interval) {
+            override fun onFinish() {
+                // When the timer runs out
+                val alertDialog = AlertDialog.Builder(this@MapsActivity).create()
+                alertDialog.setTitle("Time's up!")
+                alertDialog.setMessage("You ran out of time, better walk faster!")
+                alertDialog.setOnCancelListener { _ -> finish() }
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { _, _ -> finish()})
+                alertDialog.show()
+            }
+
+            override fun onTick(milliSecondsRemaining: Long) {
+                // Update the timer
+                val secondsRemaining = Math.round(milliSecondsRemaining / 1000.0)
+                timerText.text = secondsToString(secondsRemaining.toInt())
+                timerText.setTextColor(Color.WHITE)
+            }
+        }
+        countDownTimer.start()
+    }
+
+    fun secondsToString(secondsRemaining: Int): String {
+        val minutes = secondsRemaining / 60
+        val seconds = secondsRemaining % 60
+        val minuteString = if (minutes < 10) "0$minutes" else minutes.toString()
+        val secondString = if (seconds < 10) "0$seconds" else seconds.toString()
+        return minuteString + ":" + secondString
     }
 
     fun collectLyric(lyricID: String) {
@@ -128,11 +179,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     fun guessSong(extras: Bundle) {
         // Build dialog and set dimensions
         val dialog = Dialog(this)
-        val layoutParams = WindowManager.LayoutParams()
-        layoutParams.copyFrom(dialog.window.attributes)
-        val metrics = resources.displayMetrics
-        val screenHeight = metrics.heightPixels / 2
-        layoutParams.height = screenHeight
+//        val layoutParams = WindowManager.LayoutParams()
+//        layoutParams.copyFrom(dialog.window.attributes)
+//        val metrics = resources.displayMetrics
+//        val screenHeight = metrics.heightPixels / 3
+//        layoutParams.height = screenHeight
         dialog.setContentView(R.layout.guess_song)
         // Set on click listener for guess button
         dialog.guess_song_button.setOnClickListener { _ ->
@@ -157,7 +208,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             }
         }
         dialog.show()
-        dialog.window.attributes = layoutParams
+//        dialog.window.attributes = layoutParams
     }
 
     override fun onMapReady(googleMap: GoogleMap) {

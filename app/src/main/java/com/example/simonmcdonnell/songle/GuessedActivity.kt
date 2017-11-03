@@ -11,7 +11,7 @@ class GuessedActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_guessed)
-        supportActionBar?.title = "Congratulations! You Guessed Correct!"
+        supportActionBar?.title = "Congratulations!"
         // Get extras passed to this activity
         val extras = intent.extras
         guessed_title.text = extras["NAME"] as String

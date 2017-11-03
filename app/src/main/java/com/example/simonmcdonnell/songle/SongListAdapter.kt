@@ -33,9 +33,6 @@ class SongListAdapter(val caller: Context, var songList: ArrayList<String>) :
     // Inner class to deal with a user clicking on an item in the song list
     class MyViewHolder(val view: View, val caller: Context) : RecyclerView.ViewHolder(view) {
         private val TAG = "LOG_TAG"
-        var number = ""
         var title: TextView = view.song_title
-//        var artist: TextView = v.song_artist
-        var link = ""
     }
 }

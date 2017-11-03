@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         val rand = Random()
         val index = rand.nextInt(songList.size)
         val song = songList[index]
-        // Display song and send it to MapsActivity
+        // Download lyrics for the chosen song
         DownloadTXTTask(this, song).execute(contentUrl + "${song.number}/lyrics.txt")
     }
 
@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map$difficulty.kml")
     }
 
+    // Download complete for retrieving kml. Lyrics and kml are passed to Maps Activity
     override fun downloadComplete(kmlString: String, lyrics: String, song: MyParser.Song) {
         val mapsIntent = Intent(this, MapsActivity::class.java)
         mapsIntent.putExtra("ID", song.number)

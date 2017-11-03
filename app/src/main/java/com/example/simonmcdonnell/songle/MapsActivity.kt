@@ -2,6 +2,8 @@ package com.example.simonmcdonnell.songle
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.support.v7.app.AppCompatActivity
@@ -53,10 +55,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         setContentView(R.layout.activity_maps)
         // Get extras from intent and build url
         val extras = intent.extras
-        val map_id = extras["ID"]
-        val song_name = extras["NAME"]
-        val song_artist = extras["ARTIST"]
-        val song_link = extras["LINK"]
         val song_lyrics = extras["LYRICS"] as String
         val lyric_lines = song_lyrics.split("\n")
         lyricList = lyric_lines.map { it.trim().split(" ") }
@@ -99,7 +97,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
         fab_item2.setOnClickListener { _ ->
             fab_main.close(true)
-            guessSong()
+            guessSong(extras)
         }
     }
 
@@ -127,13 +125,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.window.attributes = layoutParams
     }
 
-    fun guessSong() {
+    fun guessSong(extras: Bundle) {
+        // Build dialog and set dimensions
         val dialog = Dialog(this)
         val layoutParams = WindowManager.LayoutParams()
         layoutParams.copyFrom(dialog.window.attributes)
-        layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
+        val metrics = resources.displayMetrics
+        val screenHeight = metrics.heightPixels / 2
+        layoutParams.height = screenHeight
         dialog.setContentView(R.layout.guess_song)
-        val guess_button = dialog.guess_song_button
+        // Set on click listener for guess button
+        dialog.guess_song_button.setOnClickListener { _ ->
+            val guess = dialog.guess_song_input.text.toString().toLowerCase().trim()
+            val song_title = extras["NAME"] as String
+            if (guess == song_title.toLowerCase()) {
+                // If guess is correct take the user to GuessedActivity
+                val guessedIntent = Intent(this, GuessedActivity::class.java)
+                guessedIntent.putExtra("NAME", song_title)
+                guessedIntent.putExtra("ARTIST", extras["ARTIST"] as String)
+                guessedIntent.putExtra("LINK", extras["LINK"] as String)
+                guessedIntent.putExtra("LYRICS", extras["LYRICS"] as String)
+                startActivity(guessedIntent)
+                finish()
+            } else {
+                dialog.dismiss()
+                val alertDialog = AlertDialog.Builder(this).create()
+                alertDialog.setTitle("Nope")
+                alertDialog.setMessage("That's not right, keep trying!")
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { dialog, _ -> dialog.dismiss()})
+                alertDialog.show()
+            }
+        }
         dialog.show()
         dialog.window.attributes = layoutParams
     }
@@ -221,6 +243,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     mGoogleApiClient, myLocationRequest, this)
         }
+    }
+
+    override fun onBackPressed() {
+        val listener = DialogInterface.OnClickListener { dialogInterface, i ->
+            if (i == DialogInterface.BUTTON_POSITIVE) {
+                finish()
+            }
+        }
+        val dialog = AlertDialog.Builder(this)
+        dialog.setMessage("Are you sure you want to quit?")
+        dialog.setPositiveButton("Quit", listener)
+        dialog.setNegativeButton("Cancel", listener)
+        dialog.show()
     }
 
     override fun onStart() {

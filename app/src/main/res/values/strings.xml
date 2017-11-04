@@ -9,6 +9,8 @@
     <string name="main_activity_settings_button">Settings</string>
     <string name="title_activity_settings">Settings</string>
     <string name="link_to_youtube">Listen to song on YouTube</string>
+    <string name="hint_random">Get 3 random lyrics for 30XP</string>
+    <string name="hint_line">Get a line of the song for 100XP</string>
 
     <!-- Strings related to Settings -->
 

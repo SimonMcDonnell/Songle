@@ -68,7 +68,8 @@
             android:paddingBottom="16dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:text="@string/link_to_youtube" />
+            android:text="@string/link_to_youtube"
+            android:textColor="@color/titleColor"/>
 
     </LinearLayout>
 

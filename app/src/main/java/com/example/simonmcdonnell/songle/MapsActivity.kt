@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.preference.PreferenceManager
+import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -32,9 +33,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.data.kml.KmlLayer
 import com.google.maps.android.data.kml.KmlPoint
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.guess_song.*
+import kotlinx.android.synthetic.main.hints.*
 import kotlinx.android.synthetic.main.list_layout.*
 import java.nio.charset.StandardCharsets
 
@@ -70,27 +71,31 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val fab_main = fab_main
         val fab_item1 = fab_menu_item1
         val fab_item2 = fab_menu_item2
+        val fab_item3 = fab_menu_item3
+        // Set up menu behaviour, allowing FAB to move for snackbars at bottom of screen
+        val layoutParams = fab_main.layoutParams as CoordinatorLayout.LayoutParams
+        layoutParams.behavior = FloatingActionMenuBehavior()
+        fab_main.requestLayout()
         collectedLyrics = ArrayList()
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello differenthhhhhhhhhhhhthishihgioewhgoiwehgoiwgowovweobvwouevouwbevouwabvouwbvouwbv ")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("this is a bunch Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("This is a really long lyric that I've collected bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("byehi hihihihihi")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("byeThis is a realy long line from a song test")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
-        collectedLyrics.add("Hello")
-        collectedLyrics.add("bye")
+        collectedLyrics.add("eyes")
+        collectedLyrics.add("sympathy")
+        collectedLyrics.add("begun")
+        collectedLyrics.add("Mama")
+        collectedLyrics.add("Galileo")
+        collectedLyrics.add("Any way the wind blows doesn't really matter to me, to me")
+        collectedLyrics.add("poor")
+        collectedLyrics.add("boy")
+        collectedLyrics.add("killed")
+        collectedLyrics.add("shivers")
+        collectedLyrics.add("Thunderbolt")
+        collectedLyrics.add("Scaramouche")
+        collectedLyrics.add("Fandango")
+        collectedLyrics.add("Magnifico-o-o-o-o")
+        collectedLyrics.add("Beelzebub")
+        collectedLyrics.add("baby")
+        collectedLyrics.add("nobody")
+        collectedLyrics.add("frightening")
+        collectedLyrics.add("wind")
         fab_item1.setOnClickListener { _ ->
             fab_main.close(true)
             viewCollectedLyrics()
@@ -98,6 +103,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         fab_item2.setOnClickListener { _ ->
             fab_main.close(true)
             guessSong(extras)
+        }
+        fab_item3.setOnClickListener { _ ->
+            fab_main.close(true)
+            showHints(extras)
         }
     }
 
@@ -177,6 +186,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     }
 
     fun guessSong(extras: Bundle) {
+        Snackbar.make(maps_activity_layout, "New lyric - Fandango", Snackbar.LENGTH_LONG).show()
         // Build dialog and set dimensions
         val dialog = Dialog(this)
 //        val layoutParams = WindowManager.LayoutParams()
@@ -209,6 +219,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
         dialog.show()
 //        dialog.window.attributes = layoutParams
+    }
+
+    fun showHints(extras: Bundle) {
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.hints)
+        dialog.hint_XP.text = "You have 3000XP"
+        dialog.show()
+//        val alertDialog = AlertDialog.Builder(this).create()
+//        alertDialog.setTitle("Nope")
+//        alertDialog.setMessage("Sorry, you don't have enough XP")
+//        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { dialog, _ -> dialog.dismiss()})
+//        alertDialog.show()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {

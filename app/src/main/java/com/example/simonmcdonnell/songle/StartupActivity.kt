@@ -40,7 +40,7 @@ class StartupActivity : AppCompatActivity() {
                     || networkInfo?.type == ConnectivityManager.TYPE_MOBILE) {
                 DownloadXMLTask(this@StartupActivity).execute(songsUrl)
             } else {
-                displayMessage("No Connection")
+                displayMessage("No Internet Connection")
             }
         }
     }

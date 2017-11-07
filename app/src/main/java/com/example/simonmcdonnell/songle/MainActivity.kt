@@ -9,9 +9,12 @@ import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.design.widget.Snackbar
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.android.synthetic.main.activity_main.*
 import java.nio.charset.StandardCharsets
 import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, DownloadTXTTask.DownloadTXTListener {
     private val TAG = "LOG_TAG"
@@ -42,6 +45,10 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         settings_button.setOnClickListener { _ ->
             val settingsIntent = Intent(this, SettingsActivity::class.java)
             startActivity(settingsIntent)
+        }
+        completed_button.setOnClickListener { _ ->
+            val completedIntent = Intent(this, ReviewActivity::class.java)
+            startActivity(completedIntent)
         }
     }
 
@@ -85,5 +92,37 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         mapsIntent.putExtra("LYRICS", lyrics)
         mapsIntent.putExtra("KML", kmlString)
         startActivity(mapsIntent)
+
+        val gson = Gson()
+        val jsonList = settings.getString("PLAYED", null)
+        if (jsonList == null) {
+            val playedList = ArrayList<MyParser.Song>()
+            Log.v(TAG, "BEfore" + playedList.toString())
+            playedList.add(song)
+            val editor = settings.edit()
+            val json = gson.toJson(playedList)
+            editor.putString("PLAYED", json)
+            editor.commit()
+        } else {
+            val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
+            val playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
+            Log.v(TAG, "BEfore" + playedList.toString())
+            var seen = false
+            for (s in playedList) {
+                if (s.title == song.title) {
+                    seen = true
+                }
+            }
+            if (!seen) playedList.add(song)
+            val editor = settings.edit()
+            val json = gson.toJson(playedList)
+            editor.putString("PLAYED", json)
+            editor.commit()
+        }
+
+        val jsonList1 = settings.getString("PLAYED", null)
+        val type1 = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
+        val playedList1 = gson.fromJson<ArrayList<MyParser.Song>>(jsonList1, type1)
+        Log.v(TAG, "after" + playedList1.toString())
     }
 }

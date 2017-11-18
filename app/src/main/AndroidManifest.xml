@@ -38,7 +38,6 @@
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps" />
         <activity android:name=".MainActivity" />
-        <activity android:name=".SongListActivity" />
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" />
@@ -50,7 +49,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".GuessedActivity" />
-        <activity android:name=".ReviewActivity"></activity>
+        <activity android:name=".CompletedActivity"></activity>
     </application>
 
 </manifest>

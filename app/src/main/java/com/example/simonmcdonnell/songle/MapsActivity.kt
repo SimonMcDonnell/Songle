@@ -50,12 +50,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     private lateinit var collectedLyrics: ArrayList<String>
     private lateinit var kmlString: String
     private lateinit var layer: KmlLayer
+    private lateinit var extras: Bundle
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
         // Get extras from intent and build url
-        val extras = intent.extras
+        extras = intent.extras
         val song_lyrics = extras["LYRICS"] as String
         val lyric_lines = song_lyrics.split("\n")
         lyricList = lyric_lines.map { it.trim().split(" ") }
@@ -102,11 +103,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
         fab_item2.setOnClickListener { _ ->
             fab_main.close(true)
-            guessSong(extras)
+            guessSong()
         }
         fab_item3.setOnClickListener { _ ->
             fab_main.close(true)
-            showHints(extras)
+            showHints()
         }
     }
 
@@ -179,13 +180,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.setContentView(R.layout.list_layout)
         val lyricList = dialog.recyclerview
         lyricList.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-        lyricList.adapter = SongListAdapter(this, collectedLyrics)
+        lyricList.adapter = CollectedLyricsAdapter(this, collectedLyrics)
         dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
         dialog.window.attributes = layoutParams
     }
 
-    fun guessSong(extras: Bundle) {
+    fun guessSong() {
         Snackbar.make(maps_activity_layout, "New lyric - Fandango", Snackbar.LENGTH_LONG).show()
         // Build dialog and set dimensions
         val dialog = Dialog(this)
@@ -207,7 +208,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                 guessedIntent.putExtra("LINK", extras["LINK"] as String)
                 guessedIntent.putExtra("LYRICS", extras["LYRICS"] as String)
                 startActivity(guessedIntent)
-                finish()
+                gameOver(1)
             } else {
                 dialog.dismiss()
                 val alertDialog = AlertDialog.Builder(this).create()
@@ -221,7 +222,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
 //        dialog.window.attributes = layoutParams
     }
 
-    fun showHints(extras: Bundle) {
+    fun showHints() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.hints)
         dialog.hint_XP.text = "You have 3000XP"
@@ -319,9 +320,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     }
 
     override fun onBackPressed() {
-        val listener = DialogInterface.OnClickListener { dialogInterface, i ->
+        val listener = DialogInterface.OnClickListener { _, i ->
             if (i == DialogInterface.BUTTON_POSITIVE) {
-                finish()
+                gameOver(0)
             }
         }
         val dialog = AlertDialog.Builder(this)
@@ -329,6 +330,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.setPositiveButton("Quit", listener)
         dialog.setNegativeButton("Cancel", listener)
         dialog.show()
+    }
+
+    fun gameOver(result: Int) {
+        // Finish the activity with result of SUCCESS or FAILURE
+        val gameOverIntent = Intent()
+        gameOverIntent.putExtra("NAME", extras["NAME"] as String)
+        gameOverIntent.putExtra("ARTIST", extras["ARTIST"] as String)
+        gameOverIntent.putExtra("LINK", extras["LINK"] as String)
+        setResult(result, gameOverIntent)
+        finish()
     }
 
     override fun onStart() {

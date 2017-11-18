@@ -19,6 +19,9 @@ import kotlin.collections.ArrayList
 class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, DownloadTXTTask.DownloadTXTListener {
     private val TAG = "LOG_TAG"
     private val contentUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
+    private val REQUEST_CODE = 101
+    private val SUCCESS = 1
+    private val FAILURE = 0
     private lateinit var settings: SharedPreferences
     private lateinit var songList: List<MyParser.Song>
 
@@ -47,7 +50,7 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
             startActivity(settingsIntent)
         }
         completed_button.setOnClickListener { _ ->
-            val completedIntent = Intent(this, ReviewActivity::class.java)
+            val completedIntent = Intent(this, CompletedActivity::class.java)
             startActivity(completedIntent)
         }
     }
@@ -91,38 +94,43 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         mapsIntent.putExtra("LINK", song.link)
         mapsIntent.putExtra("LYRICS", lyrics)
         mapsIntent.putExtra("KML", kmlString)
-        startActivity(mapsIntent)
+        startActivityForResult(mapsIntent, REQUEST_CODE)
+    }
 
-        val gson = Gson()
-        val jsonList = settings.getString("PLAYED", null)
-        if (jsonList == null) {
-            val playedList = ArrayList<MyParser.Song>()
-            Log.v(TAG, "BEfore" + playedList.toString())
-            playedList.add(song)
-            val editor = settings.edit()
-            val json = gson.toJson(playedList)
-            editor.putString("PLAYED", json)
-            editor.commit()
-        } else {
-            val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
-            val playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
-            Log.v(TAG, "BEfore" + playedList.toString())
-            var seen = false
-            for (s in playedList) {
-                if (s.title == song.title) {
-                    seen = true
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        // If the user guessed the song, add it to the list of completed songs
+        if (requestCode == REQUEST_CODE && resultCode == SUCCESS) {
+            val extras = data.extras
+            val artist = extras.getString("ARTIST") as String
+            val title = extras.getString("NAME") as String
+            val link = extras.getString("LINK") as String
+            val song = MyParser.Song("", artist, title, link)
+            val gson = Gson()
+            val jsonList = settings.getString("PLAYED", null)
+            if (jsonList == null) {
+                val playedList = ArrayList<MyParser.Song>()
+                Log.v(TAG, "BEfore" + playedList.toString())
+                playedList.add(song)
+                val editor = settings.edit()
+                val json = gson.toJson(playedList)
+                editor.putString("PLAYED", json)
+                editor.apply()
+            } else {
+                val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
+                val playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
+                Log.v(TAG, "BEfore" + playedList.toString())
+                var seen = false
+                for (s in playedList) {
+                    if (s.title == song.title) {
+                        seen = true
+                    }
                 }
+                if (!seen) playedList.add(song)
+                val editor = settings.edit()
+                val json = gson.toJson(playedList)
+                editor.putString("PLAYED", json)
+                editor.apply()
             }
-            if (!seen) playedList.add(song)
-            val editor = settings.edit()
-            val json = gson.toJson(playedList)
-            editor.putString("PLAYED", json)
-            editor.commit()
         }
-
-        val jsonList1 = settings.getString("PLAYED", null)
-        val type1 = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
-        val playedList1 = gson.fromJson<ArrayList<MyParser.Song>>(jsonList1, type1)
-        Log.v(TAG, "after" + playedList1.toString())
     }
 }

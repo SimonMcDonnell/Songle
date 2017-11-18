@@ -1,24 +1,21 @@
 package com.example.simonmcdonnell.songle
 
 import android.content.Context
-import android.content.Intent
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import kotlinx.android.synthetic.main.activity_main.view.*
 import kotlinx.android.synthetic.main.song_item.view.*
 
-class SongListAdapter(val caller: Context, var songList: ArrayList<String>) :
-        RecyclerView.Adapter<SongListAdapter.MyViewHolder>() {
+class CollectedLyricsAdapter(val caller: Context, var songList: ArrayList<String>) :
+        RecyclerView.Adapter<CollectedLyricsAdapter.MyViewHolder>() {
     private val TAG = "LOG_TAG"
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         // Inflate the song_item layout to use for each list item in recyclerview
         val inflatedView = LayoutInflater.from(parent.context).inflate(R.layout.song_item, parent, false)
-        return SongListAdapter.MyViewHolder(inflatedView, caller)
+        return CollectedLyricsAdapter.MyViewHolder(inflatedView, caller)
     }
 
     override fun getItemCount(): Int {

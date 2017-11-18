@@ -8,7 +8,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class DownloadXmlTaskList(var songList: ArrayList<MyParser.Song>, var adapter: SongListAdapter):
+class DownloadXmlTaskList(var songList: ArrayList<MyParser.Song>, var adapter: CollectedLyricsAdapter):
         AsyncTask<String, Void, String>() {
     private val TAG = "LOG_TAG"
     private lateinit var songs: ArrayList<MyParser.Song>

@@ -5,6 +5,8 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.location.Location
 import android.support.v7.app.AppCompatActivity
@@ -29,10 +31,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.*
 import com.google.maps.android.data.kml.KmlLayer
 import com.google.maps.android.data.kml.KmlPoint
+import com.google.maps.android.data.kml.KmlStyle
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.guess_song.*
 import kotlinx.android.synthetic.main.hints.*
@@ -49,7 +51,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     private lateinit var lyricList: List<List<String>>
     private lateinit var collectedLyrics: ArrayList<String>
     private lateinit var kmlString: String
-    private lateinit var layer: KmlLayer
+    private lateinit var markers: ArrayList<Marker>
     private lateinit var extras: Bundle
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +63,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val lyric_lines = song_lyrics.split("\n")
         lyricList = lyric_lines.map { it.trim().split(" ") }
         kmlString = extras["KML"] as String
+        markers = ArrayList()
+        collectedLyrics = ArrayList()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         // Get notified when map is ready to use
@@ -77,26 +81,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val layoutParams = fab_main.layoutParams as CoordinatorLayout.LayoutParams
         layoutParams.behavior = FloatingActionMenuBehavior()
         fab_main.requestLayout()
-        collectedLyrics = ArrayList()
-        collectedLyrics.add("eyes")
-        collectedLyrics.add("sympathy")
-        collectedLyrics.add("begun")
-        collectedLyrics.add("Mama")
-        collectedLyrics.add("Galileo")
-        collectedLyrics.add("Any way the wind blows doesn't really matter to me, to me")
-        collectedLyrics.add("poor")
-        collectedLyrics.add("boy")
-        collectedLyrics.add("killed")
-        collectedLyrics.add("shivers")
-        collectedLyrics.add("Thunderbolt")
-        collectedLyrics.add("Scaramouche")
-        collectedLyrics.add("Fandango")
-        collectedLyrics.add("Magnifico-o-o-o-o")
-        collectedLyrics.add("Beelzebub")
-        collectedLyrics.add("baby")
-        collectedLyrics.add("nobody")
-        collectedLyrics.add("frightening")
-        collectedLyrics.add("wind")
+        // Set up onClick behaviour of FAB buttons
         fab_item1.setOnClickListener { _ ->
             fab_main.close(true)
             viewCollectedLyrics()
@@ -164,11 +149,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
 
     fun collectLyric(lyricID: String) {
         Log.v(TAG, "Collected $lyricID")
-        val alertDialog = AlertDialog.Builder(this).create()
-        alertDialog.setTitle("Alert")
-        alertDialog.setMessage("You've collected a lyric")
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { dialog, _ -> dialog.dismiss()})
-        alertDialog.show()
+        val location = lyricID.split(":").map { it.toInt() }
+        val lyric = lyricList[location[0] - 1][location[1] - 1]
+        Snackbar.make(maps_activity_layout, "New lyric - $lyric", Snackbar.LENGTH_LONG).show()
+        collectedLyrics.add(0, lyric)
     }
 
     fun viewCollectedLyrics() {
@@ -248,9 +232,41 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         }
         // Add "My Location" button to screen
         mMap.uiSettings.isMyLocationButtonEnabled = true
+        addMapMarkers()
+    }
+
+    fun addMapMarkers() {
         // Add Kml layer to the map
-        layer = KmlLayer(mMap, kmlString.byteInputStream(StandardCharsets.UTF_8), this)
+        val layer = KmlLayer(mMap, kmlString.byteInputStream(StandardCharsets.UTF_8), this)
         layer.addLayerToMap()
+        // Replace each placemark with a Map Marker. This is done so we can remove markers when collected.
+        for (container in layer.containers) {
+            for (placemark in container.placemarks) {
+                val point = placemark.geometry as KmlPoint
+                val title = placemark.getProperty("name")
+                val description = placemark.getProperty("description")
+                val iconBitmap = BitmapFactory.decodeResource(resources, getPlacemarkImage(description))
+                val resizedIconBitmap = Bitmap.createScaledBitmap(iconBitmap, 100, 100, false)
+                val marker = mMap.addMarker(MarkerOptions()
+                        .position(LatLng(point.geometryObject.latitude, point.geometryObject.longitude))
+                        .title(title)
+                        .icon(BitmapDescriptorFactory.fromBitmap(resizedIconBitmap)))
+                markers.add(marker)
+            }
+        }
+        // Remove duplicate layer
+        layer.removeLayerFromMap()
+    }
+
+    fun getPlacemarkImage(description: String): Int {
+        return when (description) {
+            "veryinteresting" -> R.mipmap.veryinteresting
+            "interesting" -> R.mipmap.interesting
+            "notboring" -> R.mipmap.notboring
+            "boring" -> R.mipmap.boring
+            "unclassified" -> R.mipmap.unclassified
+            else -> R.mipmap.unclassified
+        }
     }
 
     override fun onConnected(connectionHint: Bundle?) {
@@ -285,18 +301,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             println("[onLocationUnchanged] Location unknown")
         } else {
             println("[onLocationChanged] Lat/Long now (${current.latitude}, ${current.longitude})")
-            for (container in layer.containers) {
-                for (placemark in container.placemarks) {
-                    val point = placemark.geometry as KmlPoint
-                    val point_lat = point.geometryObject.latitude
-                    val point_long = point.geometryObject.longitude
-                    val lat_dist = Math.abs(current.latitude - point_lat)
-                    val long_dist = Math.abs(current.longitude - point_long)
-                    val dist = Math.sqrt(Math.pow(lat_dist, 2.0) + Math.pow(long_dist, 2.0))
-                    if (dist <= 0.00015) {
-                        collectLyric("Got one!")
-                        break
-                    }
+            // Check to see if any markers are within 15m from our location
+            for (i in markers.indices) {
+                val marker = markers[i]
+                val lat = marker.position.latitude
+                val long = marker.position.longitude
+                val lat_diff = Math.abs(current.latitude - lat)
+                val long_diff = Math.abs(current.longitude - long)
+                val dist = Math.sqrt(Math.pow(lat_diff, 2.0) + Math.pow(long_diff, 2.0))
+                if (dist <= 0.00015) {
+                    // If close to a marker, collect it and remove it from map
+                    collectLyric(marker.title)
+                    marker.remove()
+                    markers.removeAt(i)
+                    break
                 }
             }
         }

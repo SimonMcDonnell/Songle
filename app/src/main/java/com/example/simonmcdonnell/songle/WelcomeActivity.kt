@@ -17,37 +17,32 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.StandardCharsets
-import kotlinx.android.synthetic.main.activity_startup.*
+import kotlinx.android.synthetic.main.activity_welcome.*
 
-class StartupActivity : AppCompatActivity() {
+class WelcomeActivity : AppCompatActivity() {
     private val songsUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/songs.xml"
     private var receiver = NetworkReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_startup)
-        // Register Broadcast Receiver
+        setContentView(R.layout.activity_welcome)
+        // Register Broadcast Receiver to listen for network connection
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         this.registerReceiver(receiver, filter)
     }
 
     inner class NetworkReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, p1: Intent?) {
-            // Return a boolean value indicating whether we have internet connection
             val connMgr = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val networkInfo = connMgr.activeNetworkInfo
+            // if there is connection, download the latest list of songs
             if (networkInfo?.type == ConnectivityManager.TYPE_WIFI
                     || networkInfo?.type == ConnectivityManager.TYPE_MOBILE) {
-                DownloadXMLTask(this@StartupActivity).execute(songsUrl)
+                DownloadXMLTask(this@WelcomeActivity).execute(songsUrl)
             } else {
-                displayMessage("No Internet Connection")
+                Snackbar.make(welcome_layout, "No Internet Connection", Snackbar.LENGTH_SHORT).show()
             }
         }
-    }
-
-    fun displayMessage(message: String) {
-        val snackBar = Snackbar.make(startup_layout, message, Snackbar.LENGTH_SHORT)
-        snackBar.show()
     }
 
     class DownloadXMLTask(val caller: Activity): AsyncTask<String, Void, String>() {
@@ -65,6 +60,7 @@ class StartupActivity : AppCompatActivity() {
         }
 
         private fun loadXmlFromNetwork(urlString: String): String {
+            // Load XML and return as a string
             val stream = downloadUrl(urlString)
             val xmlString = stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
             return xmlString
@@ -84,8 +80,9 @@ class StartupActivity : AppCompatActivity() {
         }
 
         override fun onPostExecute(result: String) {
+            // When list is downloaded start the StartupActivity and pass XML string
             super.onPostExecute(result)
-            val mainIntent = Intent(caller, MainActivity::class.java)
+            val mainIntent = Intent(caller, StartActivity::class.java)
             mainIntent.putExtra("XML", result)
             caller.startActivity(mainIntent)
             caller.overridePendingTransition(R.anim.fab_scale_up, R.anim.abc_fade_out)

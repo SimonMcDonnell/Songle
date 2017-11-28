@@ -2,14 +2,14 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/colorPrimary"
+    android:id="@+id/start_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary"
-    android:id="@+id/startup_layout"
-    tools:context="com.example.simonmcdonnell.songle.StartupActivity">
+    tools:context="com.example.simonmcdonnell.songle.StartActivity">
 
     <TextView
-        android:id="@+id/startup_title"
+        android:id="@+id/start_title"
         android:layout_width="258dp"
         android:layout_height="57dp"
         android:layout_marginBottom="8dp"
@@ -30,20 +30,20 @@
         app:layout_constraintVertical_bias="0.301" />
 
     <ImageView
-        android:id="@+id/startup_notes1"
+        android:id="@+id/start_notes1"
         android:layout_width="69dp"
         android:layout_height="69dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:background="@mipmap/headphones"
-        app:layout_constraintBottom_toTopOf="@+id/startup_title"
+        app:layout_constraintBottom_toTopOf="@+id/start_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.171"
         app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
-        android:id="@+id/startup_notes2"
+        android:id="@+id/start_notes2"
         android:layout_width="72dp"
         android:layout_height="61dp"
         android:layout_marginEnd="8dp"
@@ -53,6 +53,50 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.828"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/startup_title" />
+        app:layout_constraintTop_toBottomOf="@+id/start_title"/>
+
+    <LinearLayout
+        android:id="@+id/button_layout"
+        android:layout_width="353dp"
+        android:layout_height="223dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/play_button"
+            android:layout_width="162dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:layout_margin="8dp"
+            android:background="@drawable/oval_shape"
+            android:elevation="2dp"
+            android:text="@string/main_activity_play_button" />
+
+        <Button
+            android:id="@+id/completed_button"
+            android:layout_width="162dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:layout_margin="8dp"
+            android:background="@drawable/oval_shape"
+            android:elevation="2dp"
+            android:text="@string/completed_button" />
+
+        <Button
+            android:id="@+id/settings_button"
+            android:layout_width="162dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:layout_margin="8dp"
+            android:background="@drawable/oval_shape"
+            android:elevation="2dp"
+            android:text="@string/main_activity_settings_button" />
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

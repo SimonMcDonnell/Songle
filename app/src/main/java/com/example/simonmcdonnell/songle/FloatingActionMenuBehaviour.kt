@@ -7,7 +7,7 @@ import android.support.design.widget.Snackbar
 import android.support.v4.view.ViewPropertyAnimatorListener
 import android.view.View
 
-
+// Class used to handle the movement of floating action button when Snackbar appears
 class FloatingActionMenuBehavior : CoordinatorLayout.Behavior<FloatingActionMenu>() {
     private var mTranslationY: Float = 0.toFloat()
 

@@ -34,12 +34,12 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.data.kml.KmlLayer
 import com.google.maps.android.data.kml.KmlPoint
-import com.google.maps.android.data.kml.KmlStyle
 import kotlinx.android.synthetic.main.activity_maps.*
 import kotlinx.android.synthetic.main.guess_song.*
 import kotlinx.android.synthetic.main.hints.*
 import kotlinx.android.synthetic.main.list_layout.*
 import java.nio.charset.StandardCharsets
+import java.util.*
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, LocationListener {
@@ -57,7 +57,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
-        // Get extras from intent and build url
+        // Get extras from intent and initialize global variables
         extras = intent.extras
         val song_lyrics = extras["LYRICS"] as String
         val lyric_lines = song_lyrics.split("\n")
@@ -100,6 +100,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         // Get shared preferences
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
         val isTimed = settings.getBoolean("timer", false)
+        // If timed mode is on then add to menu
         if (isTimed) {
             menuInflater.inflate(R.menu.timer, menu)
             val timer = menu?.findItem(R.id.countdown_timer)
@@ -107,6 +108,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             timerText.setPadding(20, 0, 50, 0)
             timerText.textSize = 24f
             when (settings.getString("difficulty", "3")) {
+                // Start timer for different durations depending on difficulty
                 "5" -> startTimer(timerText, 1800000, 1000)
                 "4" -> startTimer(timerText, 1800000, 1000)
                 "3" -> startTimer(timerText, 1200000, 1000)
@@ -120,17 +122,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     fun startTimer(timerText: TextView, duration: Long, interval: Long) {
         val countDownTimer = object: CountDownTimer(duration, interval) {
             override fun onFinish() {
-                // When the timer runs out
+                // When the timer runs out show dialog
                 val alertDialog = AlertDialog.Builder(this@MapsActivity).create()
                 alertDialog.setTitle("Time's up!")
                 alertDialog.setMessage("You ran out of time, better walk faster!")
-                alertDialog.setOnCancelListener { _ -> finish() }
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { _, _ -> finish()})
+                alertDialog.setOnCancelListener { _ -> gameOver(0) }
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { _, _ -> gameOver(0)})
                 alertDialog.show()
             }
 
             override fun onTick(milliSecondsRemaining: Long) {
-                // Update the timer
+                // Update the timer every second
                 val secondsRemaining = Math.round(milliSecondsRemaining / 1000.0)
                 timerText.text = secondsToString(secondsRemaining.toInt())
                 timerText.setTextColor(Color.WHITE)
@@ -140,6 +142,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     }
 
     fun secondsToString(secondsRemaining: Int): String {
+        // Format the timer string
         val minutes = secondsRemaining / 60
         val seconds = secondsRemaining % 60
         val minuteString = if (minutes < 10) "0$minutes" else minutes.toString()
@@ -147,22 +150,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         return minuteString + ":" + secondString
     }
 
-    fun collectLyric(lyricID: String) {
-        Log.v(TAG, "Collected $lyricID")
+    fun collectLyric(lyricID: String, showLyric: Boolean = true) {
+        // Retrieve the lyric at that location from the lyricList
         val location = lyricID.split(":").map { it.toInt() }
         val lyric = lyricList[location[0] - 1][location[1] - 1]
-        Snackbar.make(maps_activity_layout, "New lyric - $lyric", Snackbar.LENGTH_LONG).show()
+        if (showLyric) Snackbar.make(maps_activity_layout, "New lyric - $lyric", Snackbar.LENGTH_LONG).show()
         collectedLyrics.add(0, lyric)
     }
 
     fun viewCollectedLyrics() {
-        // Display custom view of lyrics collected
+        // Display lyrics collected
         val dialog = Dialog(this)
         val layoutParams = WindowManager.LayoutParams()
         layoutParams.copyFrom(dialog.window.attributes)
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
         dialog.setContentView(R.layout.list_layout)
         val lyricList = dialog.recyclerview
+        // Display as staggered grid
         lyricList.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         lyricList.adapter = CollectedLyricsAdapter(this, collectedLyrics)
         dialog.window.attributes.windowAnimations = R.style.dialog_animation
@@ -171,51 +175,119 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     }
 
     fun guessSong() {
-        Snackbar.make(maps_activity_layout, "New lyric - Fandango", Snackbar.LENGTH_LONG).show()
-        // Build dialog and set dimensions
         val dialog = Dialog(this)
-//        val layoutParams = WindowManager.LayoutParams()
-//        layoutParams.copyFrom(dialog.window.attributes)
-//        val metrics = resources.displayMetrics
-//        val screenHeight = metrics.heightPixels / 3
-//        layoutParams.height = screenHeight
         dialog.setContentView(R.layout.guess_song)
         // Set on click listener for guess button
         dialog.guess_song_button.setOnClickListener { _ ->
+            // Remove whitespace from guess and make lowercase for comparison
             val guess = dialog.guess_song_input.text.toString().toLowerCase().trim()
             val song_title = extras["NAME"] as String
             if (guess == song_title.toLowerCase()) {
-                // If guess is correct take the user to GuessedActivity
-                val guessedIntent = Intent(this, GuessedActivity::class.java)
+                // If guess is correct take the user to SuccessActivity, passing the song data
+                val guessedIntent = Intent(this, SuccessActivity::class.java)
                 guessedIntent.putExtra("NAME", song_title)
                 guessedIntent.putExtra("ARTIST", extras["ARTIST"] as String)
                 guessedIntent.putExtra("LINK", extras["LINK"] as String)
                 guessedIntent.putExtra("LYRICS", extras["LYRICS"] as String)
                 startActivity(guessedIntent)
+                // Indicate song was completed by passing success value to gameOver
                 gameOver(1)
             } else {
                 dialog.dismiss()
                 val alertDialog = AlertDialog.Builder(this).create()
                 alertDialog.setTitle("Nope")
                 alertDialog.setMessage("That's not right, keep trying!")
-                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { dialog, _ -> dialog.dismiss()})
+                alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss()})
                 alertDialog.show()
             }
         }
         dialog.show()
-//        dialog.window.attributes = layoutParams
     }
 
     fun showHints() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.hints)
-        dialog.hint_XP.text = "You have 3000XP"
+        val settings = PreferenceManager.getDefaultSharedPreferences(this)
+        val xp = settings.getInt("XP", 0)
+        dialog.hint_XP.text = "You have ${xp}XP"
+        // Set on click listener for random lyric button
+        dialog.hint_random.setOnClickListener { _ ->
+            val listener = DialogInterface.OnClickListener { _, i ->
+                val editor = PreferenceManager.getDefaultSharedPreferences(this).edit()
+                // If the user selects YES and has enough xp
+                if (i == DialogInterface.BUTTON_POSITIVE && xp >= 30) {
+                    // Update user's total XP
+                    val newXP = xp - 30
+                    editor.putInt("XP", newXP)
+                    editor.apply()
+                    // add 3 random lyrics to collectedLyrics
+                    val rand = Random()
+                    for (i in 0..2) {
+                        val index = rand.nextInt(markers.size)
+                        val marker = markers[index]
+                        collectLyric(marker.title, false)
+                        marker.remove()
+                        markers.removeAt(index)
+                    }
+                    dialog.dismiss()
+                    // Display confirmation dialog
+                    val alertDialog = AlertDialog.Builder(this).create()
+                    alertDialog.setTitle("New Lyrics!")
+                    alertDialog.setMessage("You have unlocked new lyrics. You now have ${newXP}XP")
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss() })
+                    alertDialog.show()
+                } else if (i == DialogInterface.BUTTON_POSITIVE) {
+                    // If the user doesn't have enough XP then display error message
+                    val alertDialog = AlertDialog.Builder(this).create()
+                    alertDialog.setTitle("Nope")
+                    alertDialog.setMessage("Sorry, you don't have enough XP")
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss() })
+                    alertDialog.show()
+                }
+            }
+            val alertDialog = AlertDialog.Builder(this)
+            alertDialog.setMessage("Get 3 random lyrics for 30XP?")
+            alertDialog.setPositiveButton("Yes", listener)
+            alertDialog.setNegativeButton("Cancel", listener)
+            alertDialog.show()
+        }
+        // Set on click listener for whole line button
+        dialog.hint_line.setOnClickListener { _ ->
+            val listener = DialogInterface.OnClickListener { _, i ->
+                val editor = PreferenceManager.getDefaultSharedPreferences(this).edit()
+                // If the user selects YES and has enough xp
+                if (i == DialogInterface.BUTTON_POSITIVE && xp >= 100) {
+                    // Update user's total XP
+                    val newXP = xp - 100
+                    editor.putInt("XP", newXP)
+                    editor.apply()
+                    // add a whole line to collectedLyrics
+                    val rand = Random()
+                    val line = lyricList[rand.nextInt(lyricList.size)]
+                    collectedLyrics.add(0, line.joinToString(" "))
+                    dialog.dismiss()
+                    // Display confirmation dialog
+                    val alertDialog = AlertDialog.Builder(this).create()
+                    alertDialog.setTitle("New Lyrics!")
+                    alertDialog.setMessage("You have unlocked new lyrics. You now have ${newXP}XP")
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss() })
+                    alertDialog.show()
+                } else if (i == DialogInterface.BUTTON_POSITIVE) {
+                    // If the user doesn't have enough XP then display error message
+                    val alertDialog = AlertDialog.Builder(this).create()
+                    alertDialog.setTitle("Nope")
+                    alertDialog.setMessage("Sorry, you don't have enough XP")
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss() })
+                    alertDialog.show()
+                }
+            }
+            val alertDialog = AlertDialog.Builder(this)
+            alertDialog.setMessage("Get a line of the song for 100XP?")
+            alertDialog.setPositiveButton("Yes", listener)
+            alertDialog.setNegativeButton("Cancel", listener)
+            alertDialog.show()
+        }
         dialog.show()
-//        val alertDialog = AlertDialog.Builder(this).create()
-//        alertDialog.setTitle("Nope")
-//        alertDialog.setMessage("Sorry, you don't have enough XP")
-//        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { dialog, _ -> dialog.dismiss()})
-//        alertDialog.show()
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -310,7 +382,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                 val long_diff = Math.abs(current.longitude - long)
                 val dist = Math.sqrt(Math.pow(lat_diff, 2.0) + Math.pow(long_diff, 2.0))
                 if (dist <= 0.00015) {
-                    // If close to a marker, collect it and remove it from map
+                    // If close to a marker, collect the lyric and remove it from map
                     collectLyric(marker.title)
                     marker.remove()
                     markers.removeAt(i)

@@ -11,23 +11,22 @@ import android.support.design.widget.Snackbar
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_start.*
 import java.nio.charset.StandardCharsets
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, DownloadTXTTask.DownloadTXTListener {
+class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, DownloadTXTTask.DownloadTXTListener {
     private val TAG = "LOG_TAG"
     private val contentUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
     private val REQUEST_CODE = 101
     private val SUCCESS = 1
-    private val FAILURE = 0
     private lateinit var settings: SharedPreferences
     private lateinit var songList: List<MyParser.Song>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_start)
         // Get Shared Preferences
         settings = PreferenceManager.getDefaultSharedPreferences(this)
         // Get XML String and parse to get list of songs
@@ -36,8 +35,9 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         val xmlInputStream = xmlString.byteInputStream(StandardCharsets.UTF_8)
         val mParser = MyParser()
         songList = mParser.parse(xmlInputStream)
-        // Set on click listener for play button
+        // Set on click listeners for buttons
         play_button.setOnClickListener { _ ->
+            // Check if we still have connection for downloading KML
             val haveConnection = checkConnection()
             if (haveConnection) {
                 playRandomSong()
@@ -55,10 +55,7 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         }
     }
 
-    fun displayMessage(message: String) {
-        val snackBar = Snackbar.make(constraint_layout, message, Snackbar.LENGTH_SHORT)
-        snackBar.show()
-    }
+    fun displayMessage(message: String) = Snackbar.make(start_layout, message, Snackbar.LENGTH_SHORT).show()
 
     fun checkConnection(): Boolean {
         // Return a boolean value indicating whether we have internet connection
@@ -73,20 +70,21 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
         val rand = Random()
         val index = rand.nextInt(songList.size)
         val song = songList[index]
-        // Download lyrics for the chosen song
+        // Download lyrics and KML for the chosen song
         DownloadTXTTask(this, song).execute(contentUrl + "${song.number}/lyrics.txt")
     }
 
     // Download complete for retrieving Lyrics
     override fun downloadComplete(lyrics: String, song: MyParser.Song) {
         displayMessage(song.title)
-        // Get the difficulty level and select appropriate kml to download
+        // Get the difficulty level and select appropriate KML to download
         val difficulty = settings.getString("difficulty", "2").toInt()
         DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map$difficulty.kml")
     }
 
-    // Download complete for retrieving kml. Lyrics and kml are passed to Maps Activity
+    // Download complete for retrieving KML
     override fun downloadComplete(kmlString: String, lyrics: String, song: MyParser.Song) {
+        // Lyrics and KML are passed to Maps Activity
         val mapsIntent = Intent(this, MapsActivity::class.java)
         mapsIntent.putExtra("ID", song.number)
         mapsIntent.putExtra("NAME", song.title)
@@ -98,39 +96,56 @@ class MainActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, D
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        // If the user guessed the song, add it to the list of completed songs
+        // If the user guessed the song, add it to the list of completed songs and update XP
         if (requestCode == REQUEST_CODE && resultCode == SUCCESS) {
+            // Retrieve completed song data
             val extras = data.extras
             val artist = extras.getString("ARTIST") as String
             val title = extras.getString("NAME") as String
             val link = extras.getString("LINK") as String
             val song = MyParser.Song("", artist, title, link)
-            val gson = Gson()
-            val jsonList = settings.getString("PLAYED", null)
-            if (jsonList == null) {
-                val playedList = ArrayList<MyParser.Song>()
-                Log.v(TAG, "BEfore" + playedList.toString())
-                playedList.add(song)
-                val editor = settings.edit()
-                val json = gson.toJson(playedList)
-                editor.putString("PLAYED", json)
-                editor.apply()
-            } else {
-                val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
-                val playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
-                Log.v(TAG, "BEfore" + playedList.toString())
-                var seen = false
-                for (s in playedList) {
-                    if (s.title == song.title) {
-                        seen = true
-                    }
-                }
-                if (!seen) playedList.add(song)
-                val editor = settings.edit()
-                val json = gson.toJson(playedList)
-                editor.putString("PLAYED", json)
-                editor.apply()
-            }
+            updateCompletedList(song)
+            updateXP()
         }
+    }
+
+    fun updateCompletedList(song: MyParser.Song) {
+        // Retrieve completed list from SharedPreferences
+        val gson = Gson()
+        val jsonList = settings.getString("PLAYED", "")
+        val editor = settings.edit()
+        val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
+        var playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
+        if (playedList == null) playedList = ArrayList<MyParser.Song>()
+        // If song is already completed then ignore
+        var seen = false
+        for (s in playedList) {
+            if (s.title == song.title) seen = true
+        }
+        // If song has not been completed before, add to the list
+        if (!seen) playedList.add(song)
+        val json = gson.toJson(playedList)
+        editor.putString("PLAYED", json)
+        editor.apply()
+    }
+
+    fun updateXP() {
+        val xp = settings.getInt("XP", 0)
+        val difficulty = settings.getString("difficulty", "2").toInt()
+        val editor = settings.edit()
+        // Reward based on difficulty of map and if timed mode was enabled
+        var reward = 0
+        when (difficulty) {
+            1 -> reward += 25
+            2 -> reward += 20
+            3 -> reward += 15
+            4 -> reward += 10
+            5 -> reward += 5
+        }
+        val timed = settings.getBoolean("timer", false)
+        if (timed) reward += 10
+        // Update the player's XP points
+        editor.putInt("XP", xp + reward)
+        editor.apply()
     }
 }

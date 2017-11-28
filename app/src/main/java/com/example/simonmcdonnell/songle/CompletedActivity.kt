@@ -27,10 +27,8 @@ class CompletedActivity : AppCompatActivity(), CompletedAdapter.CollectedItemCli
         val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
         val playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
         songList = ArrayList<MyParser.Song>()
-        if (playedList != null) {
-            songList.addAll(playedList)
-        }
-        // Set up list
+        if (playedList != null) songList.addAll(playedList)
+        // display completed list
         val layout = recyclerview
         val layoutManager = LinearLayoutManager(this)
         // Add line between each item

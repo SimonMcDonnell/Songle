@@ -115,7 +115,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
         val jsonList = settings.getString("PLAYED", "")
         val editor = settings.edit()
         val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
-        var playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
+        var playedList: ArrayList<MyParser.Song>? = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
         if (playedList == null) playedList = ArrayList<MyParser.Song>()
         // If song is already completed then ignore
         var seen = false

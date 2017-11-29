@@ -36,20 +36,28 @@
 
         <activity
             android:name=".MapsActivity"
-            android:label="@string/title_activity_maps" />
-        <activity android:name=".StartActivity" />
+            android:label="@string/title_activity_maps"
+            android:screenOrientation="nosensor"/>
+        <activity android:name=".StartActivity"
+            android:theme="@style/AppTheme.NoBar"
+            android:screenOrientation="nosensor"/>
         <activity
             android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings" />
-        <activity android:name=".WelcomeActivity">
+            android:label="@string/title_activity_settings"
+            android:screenOrientation="nosensor"/>
+        <activity android:name=".WelcomeActivity"
+            android:theme="@style/AppTheme.NoBar"
+            android:screenOrientation="nosensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SuccessActivity" />
-        <activity android:name=".CompletedActivity"></activity>
+        <activity android:name=".SuccessActivity"
+            android:screenOrientation="nosensor"/>
+        <activity android:name=".CompletedActivity"
+            android:screenOrientation="nosensor" />
     </application>
 
 </manifest>

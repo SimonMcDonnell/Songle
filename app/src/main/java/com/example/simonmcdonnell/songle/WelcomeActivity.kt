@@ -31,6 +31,12 @@ class WelcomeActivity : AppCompatActivity() {
         this.registerReceiver(receiver, filter)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        // Unregister Broadcast Receiver when activity is destroyed
+        this.unregisterReceiver(receiver)
+    }
+
     inner class NetworkReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, p1: Intent?) {
             val connMgr = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -80,7 +86,7 @@ class WelcomeActivity : AppCompatActivity() {
         }
 
         override fun onPostExecute(result: String) {
-            // When list is downloaded start the StartupActivity and pass XML string
+            // When list is downloaded launch the StartActivity and pass XML string
             super.onPostExecute(result)
             val mainIntent = Intent(caller, StartActivity::class.java)
             mainIntent.putExtra("XML", result)

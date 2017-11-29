@@ -53,6 +53,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     private lateinit var kmlString: String
     private lateinit var markers: ArrayList<Marker>
     private lateinit var extras: Bundle
+    private lateinit var countDownTimer: CountDownTimer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,7 +121,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     }
 
     fun startTimer(timerText: TextView, duration: Long, interval: Long) {
-        val countDownTimer = object: CountDownTimer(duration, interval) {
+        countDownTimer = object: CountDownTimer(duration, interval) {
             override fun onFinish() {
                 // When the timer runs out show dialog
                 val alertDialog = AlertDialog.Builder(this@MapsActivity).create()
@@ -160,22 +161,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
 
     fun viewCollectedLyrics() {
         // Display lyrics collected
-        val dialog = Dialog(this)
-        val layoutParams = WindowManager.LayoutParams()
-        layoutParams.copyFrom(dialog.window.attributes)
-        layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
+        val dialog = Dialog(this, R.style.AppTheme_OnlyActionBar)
         dialog.setContentView(R.layout.list_layout)
         val lyricList = dialog.recyclerview
         // Display as staggered grid
         lyricList.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
         lyricList.adapter = CollectedLyricsAdapter(this, collectedLyrics)
+        // Have dialog enter with defined animation
         dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
-        dialog.window.attributes = layoutParams
     }
 
     fun guessSong() {
-        val dialog = Dialog(this)
+        val dialog = Dialog(this, R.style.AppTheme_OnlyActionBar)
         dialog.setContentView(R.layout.guess_song)
         // Set on click listener for guess button
         dialog.guess_song_button.setOnClickListener { _ ->
@@ -201,11 +199,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                 alertDialog.show()
             }
         }
+        dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
     }
 
     fun showHints() {
-        val dialog = Dialog(this)
+        val dialog = Dialog(this, R.style.AppTheme_OnlyActionBar)
         dialog.setContentView(R.layout.hints)
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
         val xp = settings.getInt("XP", 0)
@@ -262,9 +261,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                     editor.putInt("XP", newXP)
                     editor.apply()
                     // add a whole line to collectedLyrics
+                    // The loop ensures we aren't getting lines with zero or one words
+                    var goodLine = false
                     val rand = Random()
-                    val line = lyricList[rand.nextInt(lyricList.size)]
-                    collectedLyrics.add(0, line.joinToString(" "))
+                    while (!goodLine) {
+                        val line = lyricList[rand.nextInt(lyricList.size)]
+                        if (line.size > 1) {
+                            collectedLyrics.add(0, line.joinToString(" "))
+                            goodLine = true
+                        }
+                    }
                     dialog.dismiss()
                     // Display confirmation dialog
                     val alertDialog = AlertDialog.Builder(this).create()
@@ -287,6 +293,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             alertDialog.setNegativeButton("Cancel", listener)
             alertDialog.show()
         }
+        dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
     }
 

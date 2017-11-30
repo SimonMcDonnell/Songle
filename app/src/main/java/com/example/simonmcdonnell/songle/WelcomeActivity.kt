@@ -68,8 +68,7 @@ class WelcomeActivity : AppCompatActivity() {
         private fun loadXmlFromNetwork(urlString: String): String {
             // Load XML and return as a string
             val stream = downloadUrl(urlString)
-            val xmlString = stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
-            return xmlString
+            return stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
         }
 
         @Throws(IOException::class)

@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import kotlinx.android.synthetic.main.song_item.view.*
 
-class CollectedLyricsAdapter(val caller: Context, var songList: ArrayList<String>) :
+class CollectedLyricsAdapter(private val caller: Context, private var songList: ArrayList<String>) :
         RecyclerView.Adapter<CollectedLyricsAdapter.MyViewHolder>() {
     private val TAG = "LOG_TAG"
 
@@ -28,7 +28,7 @@ class CollectedLyricsAdapter(val caller: Context, var songList: ArrayList<String
     }
 
     // Inner class to deal with a user clicking on an item in the song list
-    class MyViewHolder(val view: View, val caller: Context) : RecyclerView.ViewHolder(view) {
+    class MyViewHolder(view: View, val caller: Context) : RecyclerView.ViewHolder(view) {
         private val TAG = "LOG_TAG"
         var title: TextView = view.song_title
     }

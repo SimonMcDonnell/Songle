@@ -14,7 +14,7 @@ class SuccessActivity : AppCompatActivity() {
         setContentView(R.layout.activity_success)
         // Check difficulty and if timed mode is enabled to determine XP gained
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
-        val difficulty = settings.getString("difficulty", "2").toInt()
+        val difficulty = settings.getString("difficulty", "3").toInt()
         var reward = 0
         when (difficulty) {
             1 -> reward += 25

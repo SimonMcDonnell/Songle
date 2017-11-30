@@ -16,7 +16,7 @@ class FloatingActionMenuBehavior : CoordinatorLayout.Behavior<FloatingActionMenu
     }
 
     override fun onDependentViewChanged(parent: CoordinatorLayout, child: FloatingActionMenu, dependency: View): Boolean {
-        if (child is FloatingActionMenu && dependency is Snackbar.SnackbarLayout) {
+        if (dependency is Snackbar.SnackbarLayout) {
             updateTranslation(parent, child, dependency)
         }
         return false

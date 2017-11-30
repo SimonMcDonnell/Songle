@@ -55,9 +55,9 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
         }
     }
 
-    fun displayMessage(message: String) = Snackbar.make(start_layout, message, Snackbar.LENGTH_SHORT).show()
+    private fun displayMessage(message: String) = Snackbar.make(start_layout, message, Snackbar.LENGTH_SHORT).show()
 
-    fun checkConnection(): Boolean {
+    private fun checkConnection(): Boolean {
         // Return a boolean value indicating whether we have internet connection
         val connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val networkInfo = connMgr.activeNetworkInfo
@@ -65,7 +65,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
                 || networkInfo?.type == ConnectivityManager.TYPE_MOBILE
     }
 
-    fun playRandomSong() {
+    private fun playRandomSong() {
         // Pick a random song from the list
         val rand = Random()
         val index = rand.nextInt(songList.size)
@@ -78,7 +78,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
     override fun downloadComplete(lyrics: String, song: MyParser.Song) {
         displayMessage(song.title)
         // Get the difficulty level and select appropriate KML to download
-        val difficulty = settings.getString("difficulty", "2").toInt()
+        val difficulty = settings.getString("difficulty", "3").toInt()
         DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map$difficulty.kml")
     }
 
@@ -109,7 +109,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
         }
     }
 
-    fun updateCompletedList(song: MyParser.Song) {
+    private fun updateCompletedList(song: MyParser.Song) {
         // Retrieve completed list from SharedPreferences
         val gson = Gson()
         val jsonList = settings.getString("PLAYED", "")
@@ -129,9 +129,9 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
         editor.apply()
     }
 
-    fun updateXP() {
+    private fun updateXP() {
         val xp = settings.getInt("XP", 0)
-        val difficulty = settings.getString("difficulty", "2").toInt()
+        val difficulty = settings.getString("difficulty", "3").toInt()
         val editor = settings.edit()
         // Reward based on difficulty of map and if timed mode was enabled
         var reward = 0

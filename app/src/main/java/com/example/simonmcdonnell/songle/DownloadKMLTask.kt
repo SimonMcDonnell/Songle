@@ -11,7 +11,7 @@ import java.net.URL
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
-class DownloadKMLTask(val caller: DownloadKMLListener, val lyrics: String, val song: MyParser.Song):
+class DownloadKMLTask(private val caller: DownloadKMLListener, private val lyrics: String, val song: MyParser.Song):
         AsyncTask<String, Void, String>() {
     private val TAG = "LOG_TAG"
 
@@ -32,14 +32,16 @@ class DownloadKMLTask(val caller: DownloadKMLListener, val lyrics: String, val s
 
     private fun loadKMLFromNetwork(urlString: String): String {
         val stream = downloadUrl(urlString)
-        val kmlString = stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
-        return kmlString
+        Log.v(TAG, "downloaded kml")
+        return stream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
     }
 
     @Throws(IOException::class)
     private fun downloadUrl(urlString: String): InputStream {
         val url = URL(urlString)
+        Log.v(TAG, "URL = $url")
         val conn = url.openConnection() as HttpURLConnection
+        Log.v(TAG, "connection = $conn")
         conn.readTimeout = 10000
         conn.connectTimeout = 15000
         conn.requestMethod = "GET"

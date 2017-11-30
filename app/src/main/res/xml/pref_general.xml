@@ -7,7 +7,7 @@
         android:title="@string/pref_enable_timed_mode" />
 
     <ListPreference
-        android:defaultValue="-1"
+        android:defaultValue="3"
         android:entries="@array/pref_difficulty_list"
         android:entryValues="@array/pref_difficulty_list_values"
         android:key="difficulty"

@@ -60,10 +60,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         setContentView(R.layout.activity_maps)
         // Get extras from intent and initialize global variables
         extras = intent.extras
-        val song_lyrics = extras["LYRICS"] as String
-        val lyric_lines = song_lyrics.split("\n")
-        lyricList = lyric_lines.map { it.trim().split(" ") }
+        val songLyrics = extras["LYRICS"] as String
+        // Split lyrics at the newline and then turn each line into list of words
+        val lyricLines = songLyrics.split("\n")
+        lyricList = lyricLines.map { it.trim().split(" ") }
         kmlString = extras["KML"] as String
+        Log.v(TAG, "KML string $kmlString")
         markers = ArrayList()
         collectedLyrics = ArrayList()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -74,24 +76,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         mGoogleApiClient = GoogleApiClient.Builder(this).addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this).addApi(LocationServices.API).build()
         // Set up Floating action button menu
-        val fab_main = fab_main
-        val fab_item1 = fab_menu_item1
-        val fab_item2 = fab_menu_item2
-        val fab_item3 = fab_menu_item3
+        val fabMain = fab_main
+        val fabItem1 = fab_menu_item1
+        val fabItem2 = fab_menu_item2
+        val fabItem3 = fab_menu_item3
         // Set up menu behaviour, allowing FAB to move for snackbars at bottom of screen
         val layoutParams = fab_main.layoutParams as CoordinatorLayout.LayoutParams
         layoutParams.behavior = FloatingActionMenuBehavior()
-        fab_main.requestLayout()
+        fabMain.requestLayout()
         // Set up onClick behaviour of FAB buttons
-        fab_item1.setOnClickListener { _ ->
+        fabItem1.setOnClickListener { _ ->
             fab_main.close(true)
             viewCollectedLyrics()
         }
-        fab_item2.setOnClickListener { _ ->
+        fabItem2.setOnClickListener { _ ->
             fab_main.close(true)
             guessSong()
         }
-        fab_item3.setOnClickListener { _ ->
+        fabItem3.setOnClickListener { _ ->
             fab_main.close(true)
             showHints()
         }
@@ -101,6 +103,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         // Get shared preferences
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
         val isTimed = settings.getBoolean("timer", false)
+        Log.v(TAG, "OnCreateOptionsMenu isTimed=$isTimed")
         // If timed mode is on then add to menu
         if (isTimed) {
             menuInflater.inflate(R.menu.timer, menu)
@@ -120,7 +123,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         return super.onCreateOptionsMenu(menu)
     }
 
-    fun startTimer(timerText: TextView, duration: Long, interval: Long) {
+    private fun startTimer(timerText: TextView, duration: Long, interval: Long) {
         countDownTimer = object: CountDownTimer(duration, interval) {
             override fun onFinish() {
                 // When the timer runs out show dialog
@@ -151,7 +154,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         return minuteString + ":" + secondString
     }
 
-    fun collectLyric(lyricID: String, showLyric: Boolean = true) {
+    private fun collectLyric(lyricID: String, showLyric: Boolean = true) {
         // Retrieve the lyric at that location from the lyricList
         val location = lyricID.split(":").map { it.toInt() }
         val lyric = lyricList[location[0] - 1][location[1] - 1]
@@ -159,7 +162,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         collectedLyrics.add(0, lyric)
     }
 
-    fun viewCollectedLyrics() {
+    private fun viewCollectedLyrics() {
         // Display lyrics collected
         val dialog = Dialog(this, R.style.AppTheme_OnlyActionBar)
         dialog.setContentView(R.layout.list_layout)
@@ -172,7 +175,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.show()
     }
 
-    fun guessSong() {
+    private fun guessSong() {
         val dialog = Dialog(this, R.style.AppTheme_OnlyActionBar)
         dialog.setContentView(R.layout.guess_song)
         // Set on click listener for guess button
@@ -203,7 +206,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.show()
     }
 
-    fun showHints() {
+    private fun showHints() {
         val dialog = Dialog(this, R.style.AppTheme_OnlyActionBar)
         dialog.setContentView(R.layout.hints)
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
@@ -314,8 +317,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         addMapMarkers()
     }
 
-    fun addMapMarkers() {
+    private fun addMapMarkers() {
         // Add Kml layer to the map
+        Log.v(TAG, "added layer to map $kmlString")
         val layer = KmlLayer(mMap, kmlString.byteInputStream(StandardCharsets.UTF_8), this)
         layer.addLayerToMap()
         // Replace each placemark with a Map Marker. This is done so we can remove markers when collected.
@@ -337,7 +341,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         layer.removeLayerFromMap()
     }
 
-    fun getPlacemarkImage(description: String): Int {
+    private fun getPlacemarkImage(description: String): Int {
         return when (description) {
             "veryinteresting" -> R.mipmap.veryinteresting
             "interesting" -> R.mipmap.interesting
@@ -385,11 +389,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                 val marker = markers[i]
                 val lat = marker.position.latitude
                 val long = marker.position.longitude
-                val lat_diff = Math.abs(current.latitude - lat)
-                val long_diff = Math.abs(current.longitude - long)
-                val dist = Math.sqrt(Math.pow(lat_diff, 2.0) + Math.pow(long_diff, 2.0))
-                if (dist <= 0.00015) {
-                    // If close to a marker, collect the lyric and remove it from map
+                // Calculate difference in latitude and longitude in game region, converted to metres
+                val latDiff = Math.abs(current.latitude - lat) * 111340.77
+                val longDiff = Math.abs(current.longitude - long) * 62482.25
+                val dist = Math.sqrt(Math.pow(latDiff, 2.0) + Math.pow(longDiff, 2.0))
+                if (dist <= 15) {
+                    // If within 15m of a marker, collect the lyric and remove it from map
                     collectLyric(marker.title)
                     marker.remove()
                     markers.removeAt(i)
@@ -401,7 +406,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         createLocationRequest()
     }
 
-    fun createLocationRequest() {
+    private fun createLocationRequest() {
         // Set parameters for location request
         val myLocationRequest = LocationRequest()
         myLocationRequest.interval = 5000 // 5 seconds
@@ -437,6 +442,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         gameOverIntent.putExtra("LINK", extras["LINK"] as String)
         setResult(result, gameOverIntent)
         finish()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            // If the activity is destroyed, cancel the countDownTimer
+            countDownTimer.cancel()
+        } catch (exception: UninitializedPropertyAccessException){}
+        gameOver(0)
+        Log.v(TAG, "Destroyed")
     }
 
     override fun onStart() {

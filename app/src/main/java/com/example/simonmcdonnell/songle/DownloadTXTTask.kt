@@ -28,8 +28,7 @@ class DownloadTXTTask(val caller: DownloadTXTListener, val song: MyParser.Song) 
 
     private fun loadTXTFromNetwork(urlString: String): String {
         val stream = downloadUrl(urlString)
-        val lyrics = stream.bufferedReader().use { it.readText() }
-        return lyrics
+        return stream.bufferedReader().use { it.readText() }
     }
 
     @Throws(IOException::class)

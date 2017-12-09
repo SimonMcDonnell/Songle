@@ -60,14 +60,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         setContentView(R.layout.activity_maps)
         // Get extras from intent and initialize global variables
         extras = intent.extras
+        kmlString = extras["KML"] as String
         val songLyrics = extras["LYRICS"] as String
+        markers = ArrayList()
+        collectedLyrics = ArrayList()
         // Split lyrics at the newline and then turn each line into list of words
         val lyricLines = songLyrics.split("\n")
         lyricList = lyricLines.map { it.trim().split(" ") }
-        kmlString = extras["KML"] as String
-        Log.v(TAG, "KML string $kmlString")
-        markers = ArrayList()
-        collectedLyrics = ArrayList()
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         // Get notified when map is ready to use
@@ -104,7 +103,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
         val isTimed = settings.getBoolean("timer", false)
         Log.v(TAG, "OnCreateOptionsMenu isTimed=$isTimed")
-        // If timed mode is on then add to menu
+        // If timed mode is on then add timer to menu
         if (isTimed) {
             menuInflater.inflate(R.menu.timer, menu)
             val timer = menu?.findItem(R.id.countdown_timer)
@@ -155,9 +154,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     }
 
     private fun collectLyric(lyricID: String, showLyric: Boolean = true) {
-        // Retrieve the lyric at that location from the lyricList
+        // Get the location of lyric from lyricID
         val location = lyricID.split(":").map { it.toInt() }
-        val lyric = lyricList[location[0] - 1][location[1] - 1]
+        // Return lyric at location and remove any trailing commas or brackets if present
+        val lyric = lyricList[location[0] - 1][location[1] - 1].trim(',', ')')
         if (showLyric) Snackbar.make(maps_activity_layout, "New lyric - $lyric", Snackbar.LENGTH_LONG).show()
         collectedLyrics.add(0, lyric)
     }
@@ -169,7 +169,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         val lyricList = dialog.recyclerview
         // Display as staggered grid
         lyricList.layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
-        lyricList.adapter = CollectedLyricsAdapter(this, collectedLyrics)
+        lyricList.adapter = CollectedLyricsAdapter(collectedLyrics)
         // Have dialog enter with defined animation
         dialog.window.attributes.windowAnimations = R.style.dialog_animation
         dialog.show()
@@ -182,11 +182,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.guess_song_button.setOnClickListener { _ ->
             // Remove whitespace from guess and make lowercase for comparison
             val guess = dialog.guess_song_input.text.toString().toLowerCase().trim()
-            val song_title = extras["NAME"] as String
-            if (guess == song_title.toLowerCase()) {
+            val songTitle = extras["NAME"] as String
+            if (guess == songTitle.toLowerCase()) {
                 // If guess is correct take the user to SuccessActivity, passing the song data
                 val guessedIntent = Intent(this, SuccessActivity::class.java)
-                guessedIntent.putExtra("NAME", song_title)
+                guessedIntent.putExtra("NAME", songTitle)
                 guessedIntent.putExtra("ARTIST", extras["ARTIST"] as String)
                 guessedIntent.putExtra("LINK", extras["LINK"] as String)
                 guessedIntent.putExtra("LYRICS", extras["LYRICS"] as String)
@@ -216,8 +216,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         dialog.hint_random.setOnClickListener { _ ->
             val listener = DialogInterface.OnClickListener { _, i ->
                 val editor = PreferenceManager.getDefaultSharedPreferences(this).edit()
-                // If the user selects YES and has enough xp
-                if (i == DialogInterface.BUTTON_POSITIVE && xp >= 30) {
+                // If the user selects YES, has enough xp and there are enough markers remaining
+                if (i == DialogInterface.BUTTON_POSITIVE && xp >= 30 && markers.size >= 3) {
                     // Update user's total XP
                     val newXP = xp - 30
                     editor.putInt("XP", newXP)
@@ -236,6 +236,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                     val alertDialog = AlertDialog.Builder(this).create()
                     alertDialog.setTitle("New Lyrics!")
                     alertDialog.setMessage("You have unlocked new lyrics. You now have ${newXP}XP")
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss() })
+                    alertDialog.show()
+                } else if (i == DialogInterface.BUTTON_POSITIVE && xp >= 30) {
+                    // If there are not enough markers remaining, prevent user from spending XP
+                    val alertDialog = AlertDialog.Builder(this).create()
+                    alertDialog.setTitle("Nope")
+                    alertDialog.setMessage("Sorry, there are not enough lyrics remaining")
                     alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", { d, _ -> d.dismiss() })
                     alertDialog.show()
                 } else if (i == DialogInterface.BUTTON_POSITIVE) {
@@ -337,8 +344,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                 markers.add(marker)
             }
         }
-        // Remove duplicate layer
+        // Remove duplicate layer from map
         layer.removeLayerFromMap()
+        // Set the onClick event of a marker to do nothing
+        mMap.setOnMarkerClickListener { _ -> true }
     }
 
     private fun getPlacemarkImage(description: String): Int {
@@ -384,7 +393,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
             println("[onLocationUnchanged] Location unknown")
         } else {
             println("[onLocationChanged] Lat/Long now (${current.latitude}, ${current.longitude})")
-            // Check to see if any markers are within 15m from our location
+            // Check to see if any markers are within 25m from our location
             for (i in markers.indices) {
                 val marker = markers[i]
                 val lat = marker.position.latitude
@@ -393,8 +402,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
                 val latDiff = Math.abs(current.latitude - lat) * 111340.77
                 val longDiff = Math.abs(current.longitude - long) * 62482.25
                 val dist = Math.sqrt(Math.pow(latDiff, 2.0) + Math.pow(longDiff, 2.0))
-                if (dist <= 15) {
-                    // If within 15m of a marker, collect the lyric and remove it from map
+                if (dist <= 25) {
+                    // If within 25m of a marker, collect the lyric and remove it from map
                     collectLyric(marker.title)
                     marker.remove()
                     markers.removeAt(i)
@@ -449,9 +458,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         try {
             // If the activity is destroyed, cancel the countDownTimer
             countDownTimer.cancel()
-        } catch (exception: UninitializedPropertyAccessException){}
+        } catch (exception: UninitializedPropertyAccessException) {}
         gameOver(0)
-        Log.v(TAG, "Destroyed")
+        Log.v(TAG, "Activity Destroyed")
     }
 
     override fun onStart() {

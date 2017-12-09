@@ -23,6 +23,7 @@ class SuccessActivity : AppCompatActivity() {
             4 -> reward += 10
             5 -> reward += 5
         }
+        // If timed mode was on, add an additional 10XP to reward
         val timed = settings.getBoolean("timer", false)
         if (timed) reward += 10
         // Display XP gained in action bar

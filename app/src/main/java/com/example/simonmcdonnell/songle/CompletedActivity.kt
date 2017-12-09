@@ -22,12 +22,14 @@ class CompletedActivity : AppCompatActivity(), CompletedAdapter.CollectedItemCli
         // Get list of solved songs from Shared Prefs
         val settings = PreferenceManager.getDefaultSharedPreferences(this)
         val gson = Gson()
+        // List of solved songs returned as a JSON string
         val jsonList = settings.getString("PLAYED", null)
         val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
         val playedList = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
+        // Add all solved songs to songList
         songList = ArrayList()
         if (playedList != null) songList.addAll(playedList)
-        // display completed list
+        // Build completed song recyclerview
         val layout = recyclerview
         val layoutManager = LinearLayoutManager(this)
         // Add line between each item
@@ -38,6 +40,8 @@ class CompletedActivity : AppCompatActivity(), CompletedAdapter.CollectedItemCli
     }
 
     override fun onItemClick(id: Int) {
+        // Check we didn't return any errors (-1)
+        if (id < 0) return
         // Listen to song on youtube when item is clicked
         val song = songList[id]
         val link = song.link

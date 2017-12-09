@@ -8,6 +8,7 @@ import java.io.IOException
 import java.io.InputStream
 
 class MyParser {
+    // Define data class to hold Song information
     data class Song(val number: String, val artist: String, val title: String, val link: String)
     private val TAG = "LOG_TAG"
 

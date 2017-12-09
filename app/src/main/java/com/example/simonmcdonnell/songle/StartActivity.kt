@@ -42,7 +42,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
             if (haveConnection) {
                 playRandomSong()
             } else {
-                displayMessage("No Connection")
+                displayMessage("No Internet Connection")
             }
         }
         settings_button.setOnClickListener { _ ->
@@ -116,13 +116,13 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
         val editor = settings.edit()
         val type = object: TypeToken<ArrayList<MyParser.Song>>() {}.type
         var playedList: ArrayList<MyParser.Song>? = gson.fromJson<ArrayList<MyParser.Song>>(jsonList, type)
-        if (playedList == null) playedList = ArrayList<MyParser.Song>()
+        if (playedList == null) playedList = ArrayList()
         // If song is already completed then ignore
         var seen = false
         for (s in playedList) {
             if (s.title == song.title) seen = true
         }
-        // If song has not been completed before, add to the list
+        // If song has not been completed before, add to the list and save
         if (!seen) playedList.add(song)
         val json = gson.toJson(playedList)
         editor.putString("PLAYED", json)
@@ -142,6 +142,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
             4 -> reward += 10
             5 -> reward += 5
         }
+        // If timed mode was on, add additional 10XP to reward
         val timed = settings.getBoolean("timer", false)
         if (timed) reward += 10
         // Update the player's XP points

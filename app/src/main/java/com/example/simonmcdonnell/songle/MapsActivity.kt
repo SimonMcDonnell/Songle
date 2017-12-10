@@ -47,7 +47,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var mMap: GoogleMap
     private lateinit var mGoogleApiClient : GoogleApiClient
-    private lateinit var mLastLocation : Location
     private lateinit var lyricList: List<List<String>>
     private lateinit var collectedLyrics: ArrayList<String>
     private lateinit var kmlString: String
@@ -156,8 +155,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
     private fun collectLyric(lyricID: String, showLyric: Boolean = true) {
         // Get the location of lyric from lyricID
         val location = lyricID.split(":").map { it.toInt() }
-        // Return lyric at location and remove any trailing commas or brackets if present
-        val lyric = lyricList[location[0] - 1][location[1] - 1].trim(',', ')')
+        // Return lyric at location and remove specfic trailing characters
+        val lyric = lyricList[location[0] - 1][location[1] - 1].trim(',', ')', '.')
         if (showLyric) Snackbar.make(maps_activity_layout, "New lyric - $lyric", Snackbar.LENGTH_LONG).show()
         collectedLyrics.add(0, lyric)
     }
@@ -366,13 +365,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
         try {
             createLocationRequest()
         } catch (ise: IllegalStateException) {
-            println("Illegal state exception thrown [onConnected]")
+            Log.v(TAG, "Illegal state exception thrown [onConnected]")
         }
         // Can we access user's location
         if (ContextCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient)
+            val mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient)
+            Log.v(TAG, "mLastLocation $mLastLocation")
         } else {
+            // Ask for permission to use location
             ActivityCompat.requestPermissions(this,
                     arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)

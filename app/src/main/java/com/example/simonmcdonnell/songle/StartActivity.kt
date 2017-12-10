@@ -3,11 +3,14 @@ package com.example.simonmcdonnell.songle
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.support.design.widget.Snackbar
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -21,6 +24,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
     private val contentUrl = "http://www.inf.ed.ac.uk/teaching/courses/cslp/data/songs/"
     private val REQUEST_CODE = 101
     private val SUCCESS = 1
+    private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private lateinit var settings: SharedPreferences
     private lateinit var songList: List<MyParser.Song>
 
@@ -66,12 +70,21 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
     }
 
     private fun playRandomSong() {
-        // Pick a random song from the list
-        val rand = Random()
-        val index = rand.nextInt(songList.size)
-        val song = songList[index]
-        // Download lyrics and KML for the chosen song
-        DownloadTXTTask(this, song).execute(contentUrl + "${song.number}/lyrics.txt")
+        // Can we access user's location
+        if (ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // Pick a random song from the list
+            val rand = Random()
+            val index = rand.nextInt(songList.size)
+            val song = songList[index]
+            // Download lyrics and KML for the chosen song
+            DownloadTXTTask(this, song).execute(contentUrl + "${song.number}/lyrics.txt")
+        } else {
+            // Ask for permission to use location
+            ActivityCompat.requestPermissions(this,
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+        }
     }
 
     // Download complete for retrieving Lyrics

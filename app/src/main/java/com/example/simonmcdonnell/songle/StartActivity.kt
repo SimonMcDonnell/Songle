@@ -97,15 +97,21 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
 
     // Download complete for retrieving KML
     override fun downloadComplete(kmlString: String, lyrics: String, song: MyParser.Song) {
-        // Lyrics and KML are passed to Maps Activity
-        val mapsIntent = Intent(this, MapsActivity::class.java)
-        mapsIntent.putExtra("ID", song.number)
-        mapsIntent.putExtra("NAME", song.title)
-        mapsIntent.putExtra("ARTIST", song.artist)
-        mapsIntent.putExtra("LINK", song.link)
-        mapsIntent.putExtra("LYRICS", lyrics)
-        mapsIntent.putExtra("KML", kmlString)
-        startActivityForResult(mapsIntent, REQUEST_CODE)
+        // Check to see nothing went wrong during download. Eg loss of connection resulting in timeout
+        if (kmlString == "" || lyrics == "") {
+            displayMessage("Connection Timeout")
+            Log.v(TAG, "Timeout: kmlString $kmlString, lyrics $lyrics")
+        } else {
+            // Lyrics and KML are passed to Maps Activity
+            val mapsIntent = Intent(this, MapsActivity::class.java)
+            mapsIntent.putExtra("ID", song.number)
+            mapsIntent.putExtra("NAME", song.title)
+            mapsIntent.putExtra("ARTIST", song.artist)
+            mapsIntent.putExtra("LINK", song.link)
+            mapsIntent.putExtra("LYRICS", lyrics)
+            mapsIntent.putExtra("KML", kmlString)
+            startActivityForResult(mapsIntent, REQUEST_CODE)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {

@@ -325,7 +325,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.Co
 
     private fun addMapMarkers() {
         // Add Kml layer to the map
-        Log.v(TAG, "added layer to map $kmlString")
         val layer = KmlLayer(mMap, kmlString.byteInputStream(StandardCharsets.UTF_8), this)
         layer.addLayerToMap()
         // Replace each placemark with a Map Marker. This is done so we can remove markers when collected.

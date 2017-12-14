@@ -89,7 +89,7 @@ class StartActivity : AppCompatActivity(), DownloadKMLTask.DownloadKMLListener, 
 
     // Download complete for retrieving Lyrics
     override fun downloadComplete(lyrics: String, song: MyParser.Song) {
-        displayMessage(song.title)
+        Log.v(TAG, song.title)
         // Get the difficulty level and select appropriate KML to download
         val difficulty = settings.getString("difficulty", "3").toInt()
         DownloadKMLTask(this, lyrics, song).execute(contentUrl + "${song.number}/map$difficulty.kml")
